@@ -8,7 +8,7 @@ from stations.utils import StationInfo
 from stations.models import Station, Source, StationType, Localization,Coordinate
 
 from .models import Reduction,ReducedSerie,RollingMeanSerie
-from .stats import BasicStats
+from .stats import BasicStats,RollingMean
 
 
 
@@ -29,13 +29,22 @@ def basic_stats(request,**kwargs):
                                                      })
 
 
-def rolling_mean(request,station_id,**kwargs):
-    filtros = furl("?"+kwargs['filters']).args
-    if 'file' in filtros:
+def rolling_mean(request,**kwargs):
+    filters = furl("?"+kwargs['filters']).args
+    if 'file' in filters:
         return HttpResponse("FILE")
-    print("Sem erro")
-    print(kwargs)
-    return render(request,"stats_information.html",{})
+    basic_stats = RollingMean(kwargs['station_id'],filters.get('variable'))
+    basic_stats.update_informations(
+        filters.get('discretization',None),
+        filters.get('reduction',None))
+    basic_stats.get_or_create_reduced_series()
+    return render(request,'stats_information.html',{'BASE_URL':"",'sources':basic_stats.sources,
+                                                      'reduceds':basic_stats.reduceds,
+                                                      'station':basic_stats.station,
+                                                      'stats':[],
+                                                      'variables':basic_stats.variables,
+                                                     })
+
 
 
 

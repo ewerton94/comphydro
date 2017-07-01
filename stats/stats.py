@@ -54,13 +54,13 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
         n_month = self.starting_month_hydrologic_year(df)
         gp = df["data"].groupby(pd.Grouper(freq="AS-%s"%meses[n_month]))
         dic = dict(list(gp))
-        hydrologic_years = []
-        for key in dic.keys():
+        annual_dic={key:dic[key] for key in dic.keys()}
+        '''        for key in dic.keys():
             df_year=pd.DataFrame({'data':dic[key].values,'hyear':[key for i in dic[key].index]},index=dic[key].index)
             hydrologic_years.append(df_year)
         df=pd.concat(hydrologic_years)
-        print(df)
-        return df
+        print(df)'''
+        return annual_dic
     
     def get_reduced_serie(self,original,discretization,reduction):
         return ReducedSerie.objects.filter(
@@ -159,12 +159,15 @@ class RollingMean(BaseStats):
         else:
             self.reductions = Reduction.objects.filter(id=reduction_id)
     def reduce(self,daily,discretization,reduction):
-        daily_rolling_mean = daily.rolling(window=int(self.discretization),center=False).mean()
-        gp = pd.Grouper(freq=discretization.pandas_code)
-        date = list(discretized.index)
-        data = list(discretized["data"])
+        daily_rolling_mean = daily.rolling(window=int(discretization.pandas_code),center=False).mean()
+        hydrologic_years = self.hydrologic_years_dict(daily_rolling_mean)
+        gp = pd.Grouper(freq="10AS")
+        years = sorted(list(hydrologic_years.keys())[1:])
+        data = [hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]).max()
+                 for year in years if not hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]) is (nan)]
+        date = [hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]).idxmax()
+                 for year in years  if not hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]) is (nan)]
         return date,data
-    
     
     
     
