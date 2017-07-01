@@ -1,0 +1,299 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-06-27 23:24-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: .\comphydro\settings.py:121
+msgid "English"
+msgstr "Inglês"
+
+#: .\comphydro\settings.py:122
+msgid "Portuguese"
+msgstr "Português"
+
+#: .\data\apps.py:5 .\data\models.py:9
+msgid "data"
+msgstr "dado"
+
+#: .\data\models.py:10 .\data\models.py:60
+msgid "date and time"
+msgstr "data e hora"
+
+#: .\data\models.py:14
+msgid "Temporal Series"
+msgstr "Séries Temporais"
+
+#: .\data\models.py:15
+msgid "Temporal Serie"
+msgstr "Série Temporal"
+
+#: .\data\models.py:19 .\data\models.py:48 .\stations\models.py:30
+msgid "type"
+msgstr "tipo"
+
+#: .\data\models.py:20
+msgid "pandas code"
+msgstr "código pandas"
+
+#: .\data\models.py:22
+msgid "Discretizations"
+msgstr "Discretizações"
+
+#: .\data\models.py:23 .\stats\forms.py:21 .\stats\forms.py:33
+msgid "Discretization"
+msgstr "Discretização"
+
+#: .\data\models.py:29
+msgid "unit"
+msgstr "unidade"
+
+#: .\data\models.py:31
+msgid "Metric Units"
+msgstr "Unidades de medida"
+
+#: .\data\models.py:32
+msgid "Metric Unit"
+msgstr "Unidade de medida"
+
+#: .\data\models.py:38 .\data\models.py:61
+msgid "variable"
+msgstr "variável"
+
+#: .\data\models.py:39
+msgid "ANA code"
+msgstr "código ANA"
+
+#: .\data\models.py:41
+msgid "Variables"
+msgstr "Variáveis"
+
+#: .\data\models.py:42
+msgid "Variable"
+msgstr "Variável"
+
+#: .\data\models.py:50
+#, fuzzy
+#| msgid "level of consistency"
+msgid "Levels of consistency"
+msgstr "níveis de consistência"
+
+#: .\data\models.py:51
+#, fuzzy
+#| msgid "level of consistency"
+msgid "Level of consistency"
+msgstr "nível de consistência"
+
+#: .\data\models.py:59
+msgid "station"
+msgstr "posto"
+
+#: .\data\models.py:62
+msgid "level of consistency"
+msgstr "nível de consistência"
+
+#: .\data\models.py:63
+msgid "discretization"
+msgstr "discretização"
+
+#: .\data\models.py:67
+#, python-format
+msgid "Original Serie from %s data from %s station, with %s (%s) data"
+msgstr "Série Original com dados de %s do posto %s - %s (%s)"
+
+#: .\data\models.py:70
+msgid "Original Series"
+msgstr "Séries Originais"
+
+#: .\data\models.py:71
+msgid "Original Serie"
+msgstr "Série Original"
+
+#: .\stations\apps.py:5
+msgid "stations"
+msgstr "postos"
+
+#: .\stations\forms.py:15
+msgid "Station Type:"
+msgstr "Tipo do posto:"
+
+#: .\stations\forms.py:16
+msgid "Source:"
+msgstr "Fonte:"
+
+#: .\stations\forms.py:17
+msgid "ANA Code:"
+msgstr "Código ANA:"
+
+#: .\stations\models.py:6
+msgid "Coordinates"
+msgstr "Coordenadas"
+
+#: .\stations\models.py:7
+msgid "Coordinate"
+msgstr "Coordenada"
+
+#: .\stations\models.py:14
+msgid "Localizations"
+msgstr "Localizações"
+
+#: .\stations\models.py:15
+msgid "Localization"
+msgstr "Localização"
+
+#: .\stations\models.py:16
+msgid "coordinates"
+msgstr "coordenadas"
+
+#: .\stations\models.py:32
+msgid "Station Types"
+msgstr "Tipos de posto"
+
+#: .\stations\models.py:33
+msgid "Station type"
+msgstr "Tipo de posto"
+
+#: .\stations\models.py:35
+#, python-format
+msgid "%(type)s"
+msgstr ""
+
+#: .\stations\models.py:40
+msgid "Sources"
+msgstr "Fontes"
+
+#: .\stations\models.py:41
+msgid "Source"
+msgstr "Fonte"
+
+#: .\stations\models.py:44
+#, python-format
+msgid "%(source)s"
+msgstr ""
+
+#: .\stations\models.py:48 .\templates\stations.html:3
+msgid "Stations"
+msgstr "Postos"
+
+#: .\stations\models.py:49
+msgid "Station"
+msgstr "Posto"
+
+#: .\stations\models.py:50
+msgid "station type"
+msgstr "tipo de posto"
+
+#: .\stations\models.py:51
+msgid "source"
+msgstr "fonte"
+
+#: .\stations\models.py:52
+msgid "code"
+msgstr "código"
+
+#: .\stations\models.py:53
+msgid "name"
+msgstr "nome"
+
+#: .\stations\models.py:54
+msgid "localization"
+msgstr "localização"
+
+#: .\stations\reads_data.py:106 .\stations\reads_data.py:208
+#, python-format
+msgid "There is no data from '%s' variable in this station."
+msgstr "Não exte dados da variável '%s' neste posto."
+
+#: .\stations\views.py:34
+msgid "time"
+msgstr "tempo"
+
+#: .\stations\views.py:56
+#, python-format
+msgid "The station of code: %s already exists into the database."
+msgstr "O posto de código: %s já existe no banco de dados."
+
+#: .\stations\views.py:86
+msgid "Rolling Mean"
+msgstr "Médias móveis"
+
+#: .\stations\views.py:87 .\templates\base.html:117
+msgid "Basic Stats"
+msgstr "Estatística Básica"
+
+#: .\stats\forms.py:20 .\stats\forms.py:32
+#, fuzzy
+#| msgid "Station type"
+msgid "Data type"
+msgstr "Tipo de dado"
+
+#: .\templates\base.html:8 .\templates\base.html:152
+msgid "Computational Hydrology"
+msgstr "Hidrologia Computacional"
+
+#: .\templates\base.html:107
+msgid "STATION INFORMATION"
+msgstr "INFORMAÇÕES DO POSTO"
+
+#: .\templates\base.html:110
+msgid "Stats"
+msgstr "Estatísticas"
+
+#: .\templates\base.html:116
+msgid "Rolean mean"
+msgstr "Média móvel"
+
+#: .\templates\base.html:123
+msgid "Data"
+msgstr "Dados"
+
+#: .\templates\base.html:134
+msgid "Documentation"
+msgstr "Documentação"
+
+#: .\templates\base.html:152
+msgid "All rights reserved."
+msgstr "Todos os direitos reservados."
+
+#: .\templates\create_station.html:3
+msgid "New station"
+msgstr "Novo posto"
+
+#: .\templates\create_station.html:7 .\templates\stations.html:15
+msgid "Create a new station"
+msgstr "Criar um novo posto"
+
+#: .\templates\station_information.html:7
+msgid "Station Information"
+msgstr "Informações do posto"
+
+#: .\templates\station_information.html:23
+msgid "Export data to Excel"
+msgstr "Exportar dados para o Excel"
+
+#: .\templates\station_information.html:36
+msgid "Export data to JSON"
+msgstr "Exportar dados para JSON"
+
+#: .\templates\station_information.html:57
+#, python-format
+msgid "Hydrogram %(variable)s - %(tipo_dado)s Data"
+msgstr "Hidrograma de %(variable)s - dados %(tipo_dado)ss"
+
+#: .\templates\stations.html:7
+msgid "Station select"
+msgstr "Selecione o Posto"

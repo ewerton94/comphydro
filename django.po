@@ -1,0 +1,109 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-06-27 13:46-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE PT-BR<LL@li.org>\n"
+"Language: pt-br\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: .\comphydro\settings.py:120
+msgid "English"
+msgstr "Inglês"
+
+#: .\comphydro\settings.py:121
+msgid "Portuguese"
+msgstr "Português"
+
+#: .\data\models.py:6
+msgid "Coordinates"
+msgstr "Coordenadas"
+
+#: .\data\models.py:7
+msgid "Coordinate"
+msgstr "Coordenada"
+
+#: .\data\models.py:14
+msgid "Localizations"
+msgstr "Localizações"
+
+#: .\data\models.py:15
+msgid "Localization"
+msgstr "Localização"
+
+#: .\data\models.py:16
+msgid "coordinates"
+msgstr "coordenadas"
+
+#: .\data\models.py:30
+msgid "type"
+msgstr "tipo"
+
+#: .\data\models.py:32
+msgid "Station Types"
+msgstr "Tipos de Posto"
+
+#: .\data\models.py:33
+msgid "Station type"
+msgstr "Tipo de posto"
+
+#: .\data\models.py:35
+#, python-format
+msgid "%(type)s"
+msgstr ""
+
+#: .\data\models.py:40
+msgid "Sources"
+msgstr "Fontes"
+
+#: .\data\models.py:41
+msgid "Source"
+msgstr "Fonte"
+
+#: .\data\models.py:44
+#, python-format
+msgid "%(source)s"
+msgstr ""
+
+#: .\data\models.py:48
+msgid "Stations"
+msgstr "Postos"
+
+#: .\data\models.py:49
+msgid "Station"
+msgstr "Posto"
+
+#: .\data\models.py:50
+msgid "station type"
+msgstr "tipo de posto"
+
+#: .\data\models.py:51
+msgid "source"
+msgstr "fonte"
+
+#: .\data\models.py:52
+msgid "code"
+msgstr "código"
+
+#: .\data\models.py:53
+msgid "name"
+msgstr "nome"
+
+#: .\data\models.py:54
+msgid "localization"
+msgstr "localização"
+
+#: .\templates\home.html:12
+msgid "Upload Demo"
+msgstr "Teste demo"
