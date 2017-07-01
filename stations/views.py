@@ -25,14 +25,17 @@ def create_station(request):
         form =CreateStationForm(request.POST)
         if form.is_valid():
             data = form.cleaned_data
+            print("formulário validado")
             station_type = StationType.objects.get(id=data["station_type"])
             source = Source.objects.get(id=data["source"])
             code = data["ana_code"]
+            print("code")
             localization = Localization.objects.get(id=1)
             postos = Station.objects.filter(code=code)
             if postos:
                 messages.add_message(request, messages.ERROR, _('The station of code: %s already exists into the database.')%postos[0].code)
                 return render(request,'create_station.html',{'aba':'map','form':form})  
+            print('Solicitando Hidroweb')
             hid = eval(source.source)()
             print(source.source)
             name,erro = hid.obtem_nome_posto(code)

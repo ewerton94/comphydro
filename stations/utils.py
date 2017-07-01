@@ -26,16 +26,21 @@ class Stats(object):
 class StationInfo(object):
     def __init__(self,station_id,*variables):
         self.station=Station.objects.get(id=station_id)
-        self.variables=variables
+        if variables:
+            self.variable_ids=list(map(int,[v for v in variables if not v is None]))
+        
         
     def update_originals(self,Serie=OriginalSerie):
-        if self.variables:
+        if self.variable_ids:
             self.originals = OriginalSerie.objects.filter(station=self.station)
-            self.originals.filter(variable__in=self.variables)
+            self.originals.filter(variable__id__in=self.variable_ids)
         else:
             self.originals = OriginalSerie.objects.filter(station=self.station)
     def update_variables_and_sources(self):
-        self.variables=list(set([o.variable for o in self.originals]))
+        if self.variable_ids:
+            self.variables=Variable.objects.filter(id__in=self.variable_ids)
+        else:
+            self.variables=list(set([o.variable for o in self.originals]))
         self.sources=list(set([o.station.source for o in self.originals]))
         return self.originals,self.variables,self.sources
     def create_daily_data_pandas(self,temporals):

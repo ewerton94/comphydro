@@ -60,7 +60,7 @@ def cria_serie_original(dados,datas,posto,variable,nivel_consistencia):
     print("Criando Série Original para a temporal de ID: "+str(id))
     o = OriginalSerie.objects.create(
             station = posto,
-            discretization = Discretization.objects.get(type="daily"),
+            discretization = Discretization.objects.get(id=1),
             variable = variable,
             temporal_serie_id = id,
             unit=Unit.objects.get(unit="m³/s"),
@@ -200,7 +200,7 @@ class ANA(Base):
         #post_datas = [{'cboTipoReg': variavel.codigo_ana} for variavel in Variavel.objects.all()]
         #for post_data in post_datas:
         self.estacao = posto.code
-        post_data={'cboTipoReg': variavel.code}
+        post_data={'cboTipoReg': variavel.ana_code}
         print ('** %s **' % (posto.code, ))
         r = requests.post(self.montar_url_estacao(posto.code), data=post_data)
         link,erro = self.obter_link_arquivo(r)

@@ -16,7 +16,7 @@ def basic_stats(request,**kwargs):
     filters = furl("?"+kwargs['filters']).args
     if 'file' in filters:
         return HttpResponse("FILE")
-    basic_stats = BasicStats(kwargs['station_id'],filters.get('variavel'))
+    basic_stats = BasicStats(kwargs['station_id'],filters.get('variable'))
     basic_stats.update_informations(
         filters.get('discretization',None),
         filters.get('reduction',None))

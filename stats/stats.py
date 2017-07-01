@@ -74,11 +74,15 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
         self.update_originals()
         self.update_variables_and_sources()
         self.reduceds=[]
+        graphs=[]
         for original in self.originals:
+            print(original.variable,original.variable.id)
             temporals = TemporalSerie.objects.filter(id=original.temporal_serie_id)
             daily = self.create_daily_data_pandas(temporals)
             anos_hidrologicos = self.hydrologic_years_dict(daily)
-            for discretization in self.discretizations:
+            discretizations=self.discretizations[:]
+            for discretization in discretizations:
+                graph=generic_obj()
                 reduceds=[]
                 xys=[]
                 for reduction in self.reductions:
@@ -90,7 +94,7 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
                         reduced=reduced[0]
                         reduced.temporals=temporal_data
                     else:
-                        date,data=self.reduce(daily)
+                        date,data=self.reduce(daily,discretization,reduction)
                         temporal_data,reduced=self.get_temporal_data(
                             original,discretization,reduction,data,date)
                         reduced.temporals=temporal_data
@@ -99,16 +103,19 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
                     y=[t.data for t in reduced.temporals]
                     xys.append([x,y])
                 
-                
-                discretization.reduceds=reduceds
+                graph.variable=original.variable
+                graph.discretization=discretization
+                graph.reduceds=reduceds
                 names=[r.type for r in self.reductions]
-                discretization.graph = plot_web(xys=xys,
+                graph.graph = plot_web(xys=xys,
                                           title=_("%(discretization)s %(variable)s")%
                                                 {'variable':str(original.variable),
                                                  'discretization':str(discretization)
                                                  },
                                             variable=original.variable,unit=original.unit,names=names)
-            self.reduceds.extend(self.discretizations[:])
+                graphs.append(graph)
+        self.reduceds = graphs
+        print([e.variable for e in self.reduceds])
         return self.reduceds
     
     def get_temporal_data(self,original,discretization,reduction,dados,datas):
