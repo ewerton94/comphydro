@@ -14,10 +14,19 @@ class TemporalSerie(models.Model):
         verbose_name_plural = _("Temporal Series")
         verbose_name = _("Temporal Serie")
         
-        
+
+class Stats(models.Model):
+    def __str__(self):
+        return self.type
+    type = models.CharField(max_length=50,verbose_name = _('type'))
+    class Meta:
+        verbose_name_plural = _("Stats")
+        verbose_name = _("Stats") 
+
 class Discretization(models.Model):
     type = models.CharField(max_length=30,verbose_name = _('type'))
     pandas_code = models.CharField(max_length=20,verbose_name = _('pandas code'))
+    stats_type = models.ForeignKey(Stats,verbose_name = _('stats type'))
     class Meta:
         verbose_name_plural = _("Discretizations")
         verbose_name = _("Discretization")

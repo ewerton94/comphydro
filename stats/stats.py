@@ -15,9 +15,7 @@ from .models import Reduction,ReducedSerie,RollingMeanSerie
         
 
         
-funcoes_reducao = {'máxima':max,'mínima':min,'soma':sum, 'média':mean,'máxima média móvel':argmax,'mínima média móvel':argmin,
-
-                  'ascencao':'>','reducao':'<','reversao':'change'}
+funcoes_reducao = {'máxima':max,'mínima':min,'soma':sum, 'média':mean,'máxima média móvel':argmax,'mínima média móvel':argmin}
 meses = {1:"JAN",2:"FEB",3:"MAR",4:"APR",5:"MAY",6:"JUN",7:"JUL",8:"AUG",9:"SEP",10:"OCT",11:"NOV",12:"DEC"}
 
 
@@ -70,44 +68,48 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
     def reduce(self):
         pass
     
+    def get_graphs_data(self,daily,original,discretization):
+        graph=generic_obj()
+        reduceds=[]
+        xys=[]
+        for reduction in self.reductions:
+            reduced=self.get_reduced_serie(
+                original,discretization,reduction)
+            if reduced:
+                temporal_data = TemporalSerie.objects.filter(
+                    id=reduced[0].temporal_serie_id)
+                reduced=reduced[0]
+                reduced.temporals=temporal_data
+            else:
+                date,data=self.reduce(daily,discretization,reduction)
+                temporal_data,reduced=self.get_temporal_data(
+                    original,discretization,reduction,data,date)
+                reduced.temporals=temporal_data
+            reduceds.append(reduced)
+            x=[t.date for t in reduced.temporals]
+            y=[t.data for t in reduced.temporals]
+            xys.append([x,y])
+        graph.variable=original.variable
+        graph.discretization=discretization
+        graph.reduceds=reduceds
+        graph.xys = xys
+        names=[r.type for r in self.reductions]
+        return graph
+    
     def get_or_create_reduced_series(self):
         self.update_originals()
         self.update_variables_and_sources()
         self.reduceds=[]
         graphs=[]
         for original in self.originals:
-            print(original.variable,original.variable.id)
             temporals = TemporalSerie.objects.filter(id=original.temporal_serie_id)
             daily = self.create_daily_data_pandas(temporals)
             anos_hidrologicos = self.hydrologic_years_dict(daily)
             discretizations=self.discretizations[:]
             for discretization in discretizations:
-                graph=generic_obj()
-                reduceds=[]
-                xys=[]
-                for reduction in self.reductions:
-                    reduced=self.get_reduced_serie(
-                        original,discretization,reduction)
-                    if reduced:
-                        temporal_data = TemporalSerie.objects.filter(
-                            id=reduced[0].temporal_serie_id)
-                        reduced=reduced[0]
-                        reduced.temporals=temporal_data
-                    else:
-                        date,data=self.reduce(daily,discretization,reduction)
-                        temporal_data,reduced=self.get_temporal_data(
-                            original,discretization,reduction,data,date)
-                        reduced.temporals=temporal_data
-                    reduceds.append(reduced)
-                    x=[t.date for t in reduced.temporals]
-                    y=[t.data for t in reduced.temporals]
-                    xys.append([x,y])
-                
-                graph.variable=original.variable
-                graph.discretization=discretization
-                graph.reduceds=reduceds
+                graph = self.get_graphs_data(daily,original,discretization)
                 names=[r.type for r in self.reductions]
-                graph.graph = plot_web(xys=xys,
+                graph.graph = plot_web(xys=graph.xys,
                                           title=_("%(discretization)s %(variable)s")%
                                                 {'variable':str(original.variable),
                                                  'discretization':str(discretization)
@@ -115,7 +117,6 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
                                             variable=original.variable,unit=original.unit,names=names)
                 graphs.append(graph)
         self.reduceds = graphs
-        print([e.variable for e in self.reduceds])
         return self.reduceds
     
     def get_temporal_data(self,original,discretization,reduction,dados,datas):
@@ -169,7 +170,30 @@ class RollingMean(BaseStats):
                  for year in years  if not hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]) is (nan)]
         return date,data
     
+'''
+class RollingMean(BaseStats):
+    def update_informations(self,discretization_code=None,reduction_id=None):
+        if discretization_code is None:
+            self.discretizations=Discretization.objects.all()
+            self.discretizations=[d for d in self.discretizations if d.type_en_us.endswith("rolling mean")]
+        else:
+            self.discretizations = Discretization.objects.filter(pandas_code=discretization_code)
+        if reduction_id==None:
+            self.reductions =Reduction.objects.all()
+        else:
+            self.reductions = Reduction.objects.filter(id=reduction_id)
+    def reduce(self,daily,discretization,reduction):
+        daily_rolling_mean = daily.rolling(window=int(discretization.pandas_code),center=False).mean()
+        hydrologic_years = self.hydrologic_years_dict(daily_rolling_mean)
+        gp = pd.Grouper(freq="10AS")
+        years = sorted(list(hydrologic_years.keys())[1:])
+        data = [hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]).max()
+                 for year in years if not hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]) is (nan)]
+        date = [hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]).idxmax()
+                 for year in years  if not hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]) is (nan)]
+        return date,data
     
+'''    
     
     
     
@@ -178,26 +202,7 @@ class RollingMean(BaseStats):
  
     
     
-'''
-class MediaMovel(BaseEcoHidro):
-    def atualiza_informacoes(self,tipo_media_movel,codigo_discretizacao_media_movel):
-        self.discretizacao = Discretizacao.objects.get(codigo_pandas="AS")
-        self.reducao = Reducao.objects.get(tipo=tipo_media_movel+" média móvel")
-        self.discretizacao_media_movel=codigo_discretizacao_media_movel
-    
-    def prepara_serie_reduzida(self):
-        temporais = SerieTemporal.objects.filter(Id=self.original.serie_temporal_id)
-        diarios = self.cria_dados_diarios_pandas(temporais)
-        médias_móveis_por_dia = diarios.rolling(window=int(self.discretizacao_media_movel),center=False).mean()
-        anos_hidrologicos = self.dicionario_de_anos_hidrologicos(médias_móveis_por_dia)
-        gp = pd.Grouper(freq="10AS")
-        anos = sorted(list(anos_hidrologicos.keys()))
-        dados = [anos_hidrologicos[ano].groupby(gp).agg(funcoes_reducao[self.reducao.tipo.split()[0]]).max()
-                 for ano in anos if not anos_hidrologicos[ano].groupby(gp).agg(funcoes_reducao[self.reducao.tipo.split()[0]]) is (nan)]
-        datas = [anos_hidrologicos[ano].groupby(gp).agg(funcoes_reducao[self.reducao.tipo]).max()
-                 for ano in anos  if not anos_hidrologicos[ano].groupby(gp).agg(funcoes_reducao[self.reducao.tipo.split()[0]]) is (nan)]
-        return self.obtem_dados_temporais(dados,datas)
-    
+'''    
 class RazaoMudanca(BaseEcoHidro):
     def atualiza_informacoes(self,variavel_id,reducao_id):
         self.discretizacao = Discretizacao.objects.get(codigo_pandas="AS")
@@ -240,4 +245,6 @@ class FrequenciaMudanca(BaseEcoHidro):
             dados.append(float(r))
         datas = [datetime(ano,1,1) for ano in anos]
         return self.obtem_dados_temporais(dados,datas)
+        
+        
 '''

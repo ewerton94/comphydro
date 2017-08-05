@@ -46,10 +46,15 @@ def get_id_temporal():
 def criar_temporal(dados,datas):
     """Cria a série Temporal série Temporal"""
     id = get_id_temporal()
+    dados = [d for d in dados if not d is np.nan]
+    datas = [d for d in datas if not d is np.nan]
     dados_temporais = list(zip(datas,dados))
     print("Criando série temporal id = %i"%id)
+    print(id)
+    print(dados[:5])
+    print(datas[:5])
     TemporalSerie.objects.bulk_create([
-                        TemporalSerie(id = id,date = e[0],data = e[1]) for e in dados_temporais
+                        TemporalSerie(id = id,date = e[0],data = e[1]) for e in dados_temporais 
                 ])
     print("criado")
     return id
@@ -149,7 +154,7 @@ class ANA(Base):
                 shutil.copyfileobj(r.raw, f)
             print ('** %s ** (baixado)' % (estacao, ))
             self.extrai_e_renomeia(filename,temp_dir)               
-            print ('** %s ** (decompactado)' % (estacao, ))
+            print ('** %s ** (descompactado)' % (estacao, ))
         else:
             print ('** %s ** (problema)' % (estacao, ))
         return temp_dir

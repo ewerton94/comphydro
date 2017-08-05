@@ -1,9 +1,10 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from data.models import Discretization,OriginalSerie,TemporalSerie
+from data.models import Discretization,OriginalSerie,TemporalSerie,Stats
 
 class Reduction(models.Model):
     type = models.CharField(max_length=20,verbose_name = _('type'))
+    stats_type = models.ForeignKey(Stats,verbose_name = _('stats type'))
     class Meta:
         verbose_name_plural = _("Reductions")
         verbose_name = _("Reduction")

@@ -2,7 +2,8 @@
 {% load i18n %}
 {% block title %}Station Information | {% endblock %}
 {% block title_head %}{{ stats.name }}{% trans 'Information' %}{% endblock %}
-{% block subtitle %}{{ station }}{% endblock %}
+{% get_current_language as LANGUAGE_CODE %} 
+{% block subtitle %}<a href="{{ BASE_URL }}/{{ LANGUAGE_CODE }}/stations/{{ station.id }}/information">{{ station }}</a>{% endblock %}
 {% block data %}
          {% for reduced in reduceds %}
                    <div class="box box-success">
