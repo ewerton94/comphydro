@@ -3,7 +3,7 @@ from numpy import nan,mean,argmax,argmin
 from datetime import datetime
 from abc import ABCMeta, abstractmethod
 from django.utils.translation import gettext as _
-from data.models import Discretization,Unit,Variable,ConsistencyLevel,OriginalSerie,TemporalSerie
+from data.models import Discretization,Unit,Variable,ConsistencyLevel,OriginalSerie,TemporalSerie,Stats
 from data.views import plot_web
 from stations.reads_data import get_id_temporal,criar_temporal
 from stations.models import Station
@@ -134,11 +134,11 @@ class BasicStats(BaseStats):
     def update_informations(self,discretization_code=None,reduction_id=None):
         if discretization_code is None:
             self.discretizations=Discretization.objects.all()
-            self.discretizations=[d for d in self.discretizations if not d.type_en_us.endswith("rolling mean")]
+            self.discretizations=[d for d in self.discretizations if d.stats_type.type=="standard"]
         else:
             self.discretizations = Discretization.objects.filter(pandas_code=discretization_code)
         if reduction_id==None:
-            self.reductions =Reduction.objects.all()
+            self.reductions =Reduction.objects.filter(stats_type__type="standard")
         else:
             self.reductions = Reduction.objects.filter(id=reduction_id)
     def reduce(self,daily,discretization,reduction):
@@ -152,11 +152,12 @@ class RollingMean(BaseStats):
     def update_informations(self,discretization_code=None,reduction_id=None):
         if discretization_code is None:
             self.discretizations=Discretization.objects.all()
-            self.discretizations=[d for d in self.discretizations if d.type_en_us.endswith("rolling mean")]
+            self.discretizations=[d for d in self.discretizations if d.stats_type.type=="rolling mean"]
         else:
             self.discretizations = Discretization.objects.filter(pandas_code=discretization_code)
         if reduction_id==None:
-            self.reductions =Reduction.objects.all()
+            stats = Stats.objects
+            self.reductions =Reduction.objects.filter(stats_type__type="rolling mean")
         else:
             self.reductions = Reduction.objects.filter(id=reduction_id)
     def reduce(self,daily,discretization,reduction):

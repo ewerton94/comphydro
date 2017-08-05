@@ -14,7 +14,7 @@ class BasicStatsForm(forms.Form):
         super(BasicStatsForm, self).__init__(*args, **kwargs)
         self.fields['variable'].choices =list(variables)
         discretizations = ((discretizacao.pandas_code,discretizacao.type) 
-                          for discretizacao in Discretization.objects.all() if not discretizacao.type_en_us.lower().endswith("rolling mean"))
+                          for discretizacao in Discretization.objects.all() if discretizacao.stats_type.type=="standard")
         self.fields['discretization'].choices =list(discretizations)
 
     variable = forms.ChoiceField(label=_("Data type")+":",widget=forms.Select(attrs={'class':'form-control'}))
@@ -26,7 +26,7 @@ class RollingMeanForm(forms.Form):
         super(RollingMeanForm, self).__init__(*args, **kwargs)
         self.fields['variable'].choices =list(variables)
         rolling_mean_discretizations = ((discretizacao.pandas_code,discretizacao.type)
-                          for discretizacao in Discretization.objects.all() if discretizacao.type_en_us.lower().endswith("rolling mean"))
+                          for discretizacao in Discretization.objects.all() if discretizacao.stats_type.type=="rolling mean")
         self.fields['discretization'].choices =list(rolling_mean_discretizations)
 
     variable = forms.ChoiceField(label=_("Data type")+":",widget=forms.Select(attrs={'class':'form-control'}))

@@ -36,45 +36,12 @@ class StatsView():
 def basic_stats(request,**kwargs):
     stats = StatsView(request,BasicStats)
     return stats.get_data(kwargs['station_id'],kwargs['filters'])
-'''
 
-    filters = furl("?"+kwargs['filters']).args
-    if 'file' in filters:
-        return HttpResponse("FILE")
-    basic_stats = BasicStats(kwargs['station_id'],filters.get('variable'))
-    basic_stats.update_informations(
-        filters.get('discretization',None),
-        filters.get('reduction',None))
-    basic_stats.get_or_create_reduced_series()
-    return render(request,'stats_information.html',{'BASE_URL':"",'sources':basic_stats.sources,
-                                                      'reduceds':basic_stats.reduceds,
-                                                      'station':basic_stats.station,
-                                                      'stats':[],
-                                                      'variables':basic_stats.variables,
-                                                     })
-'''
+
 
 def rolling_mean(request,**kwargs):
     stats = StatsView(request,RollingMean)
     return stats.get_data(kwargs['station_id'],kwargs['filters'])
-
-'''
-    filters = furl("?"+kwargs['filters']).args
-    if 'file' in filters:
-        return HttpResponse("FILE")
-    basic_stats = RollingMean(kwargs['station_id'],filters.get('variable'))
-    basic_stats.update_informations(
-        filters.get('discretization',None),
-        filters.get('reduction',None))
-    basic_stats.get_or_create_reduced_series()
-    return render(request,'stats_information.html',{'BASE_URL':"",'sources':basic_stats.sources,
-                                                      'reduceds':basic_stats.reduceds,
-                                                      'station':basic_stats.station,
-                                                      'stats':[],
-                                                      'variables':basic_stats.variables,
-                                                     })
-
-'''
 
 
 
