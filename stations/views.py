@@ -9,7 +9,7 @@ from django.utils.translation import get_language,gettext as _
 
 from data.models import Discretization,Unit,Variable,ConsistencyLevel,OriginalSerie,TemporalSerie
 from data.views import plot_web
-from stats.forms import RollingMeanForm,BasicStatsForm
+from stats.forms import RollingMeanForm,BasicStatsForm,RateFrequencyOfChangeForm,IHAForm
 from .utils import Stats
 
 from .forms import CreateStationForm
@@ -72,6 +72,9 @@ def station_information(request,**kwargs):
         stats = [
             Stats(_("Rolling Mean"),'rolling_mean',variables,RollingMeanForm,request.POST),
             Stats(_("Basic Stats"),'basic_stats',variables,BasicStatsForm,request.POST),
+            Stats(_("Rate of change"),'rate_of_change',variables,RateFrequencyOfChangeForm,request.POST),
+            Stats(_("Frequency of change"),'frequency_of_change',variables,RateFrequencyOfChangeForm,request.POST),
+            Stats(_("Indicators of Hydrologic Alterations"),'iha',variables,RateFrequencyOfChangeForm,request.POST),
         ]
         valid_stats = [stat for stat in stats if stat.form.is_valid()]
         if len(valid_stats)>0:
@@ -83,6 +86,9 @@ def station_information(request,**kwargs):
     stats = [
         Stats(_("Rolling Mean"),'rolling_mean',variables,RollingMeanForm),
         Stats(_("Basic Stats"),'basic_stats',variables,BasicStatsForm),
+        Stats(_("Rate of change"),'rate_of_change',variables,RateFrequencyOfChangeForm),
+        Stats(_("Frequency of change"),'frequency_of_change',variables,RateFrequencyOfChangeForm),
+        Stats(_("Indicators of Hydrologic Alterations"),'iha',variables,IHAForm),
     ]  
     return render(request,'station_information.html',{'BASE_URL':"",'sources':info.sources,
                                                       'originals':info.originals,

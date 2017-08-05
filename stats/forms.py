@@ -14,7 +14,7 @@ class BasicStatsForm(forms.Form):
         super(BasicStatsForm, self).__init__(*args, **kwargs)
         self.fields['variable'].choices =list(variables)
         discretizations = ((discretizacao.pandas_code,discretizacao.type) 
-                          for discretizacao in Discretization.objects.all() if discretizacao.stats_type.type=="standard")
+                          for discretizacao in Discretization.objects.all() if discretizacao.stats_type.type=="basic stats")
         self.fields['discretization'].choices =list(discretizations)
 
     variable = forms.ChoiceField(label=_("Data type")+":",widget=forms.Select(attrs={'class':'form-control'}))
@@ -27,6 +27,32 @@ class RollingMeanForm(forms.Form):
         self.fields['variable'].choices =list(variables)
         rolling_mean_discretizations = ((discretizacao.pandas_code,discretizacao.type)
                           for discretizacao in Discretization.objects.all() if discretizacao.stats_type.type=="rolling mean")
+        self.fields['discretization'].choices =list(rolling_mean_discretizations)
+
+    variable = forms.ChoiceField(label=_("Data type")+":",widget=forms.Select(attrs={'class':'form-control'}))
+    discretization = forms.ChoiceField(label=_("Discretization")+":",required=False,
+                                         widget=forms.Select(attrs={'class':'form-control'}))
+    
+class RateFrequencyOfChangeForm(forms.Form):
+    def __init__(self, variables=[], *args, **kwargs):
+        super(RateFrequencyOfChangeForm, self).__init__(*args, **kwargs)
+        self.fields['variable'].choices = list(variables)
+        discretizacao = Discretization.objects.get(type_en_us='annual')
+        rolling_mean_discretizations = ((discretizacao.pandas_code,discretizacao.type),)
+        self.fields['discretization'].choices =list(rolling_mean_discretizations)
+
+    variable = forms.ChoiceField(label=_("Data type")+":",widget=forms.Select(attrs={'class':'form-control'}))
+    discretization = forms.ChoiceField(label=_("Discretization")+":",required=False,
+                                         widget=forms.Select(attrs={'class':'form-control'}))
+
+    
+    
+class IHAForm(forms.Form):
+    def __init__(self, variables=[], *args, **kwargs):
+        super(IHAForm, self).__init__(*args, **kwargs)
+        self.fields['variable'].choices = list(variables)
+        discretizacao = Discretization.objects.get(type_en_us='annual')
+        rolling_mean_discretizations = ((discretizacao.pandas_code,discretizacao.type),)
         self.fields['discretization'].choices =list(rolling_mean_discretizations)
 
     variable = forms.ChoiceField(label=_("Data type")+":",widget=forms.Select(attrs={'class':'form-control'}))

@@ -2,6 +2,7 @@
 <html>
 {% load staticfiles %}
 {% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -44,7 +45,7 @@
 
   <header class="main-header">
     <!-- Logo -->
-    <a href="/" class="logo">
+    <a href="{{ BASE_URL }}/{{ LANGUAGE_CODE }}/" class="logo">
       <!-- mini logo for sidebar mini 50x50 pixels -->
       <span class="logo-mini"><b>Cp</b>Hy</span>
       <!-- logo for regular state and mobile devices -->
@@ -61,7 +62,8 @@
         <ul class="nav navbar-nav">
           <!-- Messages: style can be found in dropdown.less-->
           <li class="dropdown messages-menu">
-            <a href="/stations/" class="dropdown-toggle">
+           
+            <a href="{{ BASE_URL }}/{{ LANGUAGE_CODE }}/stations/" class="dropdown-toggle">
               <i class="glyphicon glyphicon-globe"></i>
               <!--<span class="label label-success">4</span>-->
             </a>
@@ -115,8 +117,12 @@
             </span>
           </a>
           <ul class="treeview-menu">
-            <li class="active"><a href="index.html"><i class="fa fa-circle-o"></i>{% trans 'Rolean mean' %}</a></li>
-            <li><a href="index2.html"><i class="fa fa-circle-o"></i>{% trans 'Basic Stats' %}</a></li>
+           
+            
+           
+           
+            <li class="{% if aba == 'rolling_mean' %}active{% endif %}"><a href="{{ BASE_URL }}/{{ LANGUAGE_CODE }}/stats/rolling_mean/{{ station.id }}"><i class="fa fa-circle-o"></i>{% trans 'Rolean mean' %}</a></li>
+            <li class="{% if aba == 'basic_stats' %}active{% endif %}"><a href="{{ BASE_URL }}/{{ LANGUAGE_CODE }}/stats/basic_stats/{{ station.id }}"><i class="fa fa-circle-o"></i>{% trans 'Basic Stats' %}</a></li>
           </ul>
         </li>
         

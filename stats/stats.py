@@ -1,5 +1,5 @@
 import pandas as pd
-from numpy import nan,mean,argmax,argmin
+from numpy import nan,mean,argmax,argmin,where,split
 from datetime import datetime
 from abc import ABCMeta, abstractmethod
 from django.utils.translation import gettext as _
@@ -15,7 +15,8 @@ from .models import Reduction,ReducedSerie,RollingMeanSerie
         
 
         
-funcoes_reducao = {'máxima':max,'mínima':min,'soma':sum, 'média':mean,'máxima média móvel':argmax,'mínima média móvel':argmin}
+funcoes_reducao = {'máxima':max,'mínima':min,'soma':sum, 'média':mean,'máxima média móvel':argmax,
+                   'mínima média móvel':argmin,'fall rate':'<','rise rate':'>','fall count':'<','rise count':'>'}
 meses = {1:"JAN",2:"FEB",3:"MAR",4:"APR",5:"MAY",6:"JUN",7:"JUL",8:"AUG",9:"SEP",10:"OCT",11:"NOV",12:"DEC"}
 
 
@@ -28,9 +29,16 @@ def get_available_variables(station):
     return [o.variable for o in OriginalSerie.objects.filter(station=station)]
 
 class BaseStats(StationInfo,metaclass=ABCMeta):
-    @abstractmethod
-    def update_informations(self):
-        pass
+    def update_informations(self,discretization_code=None,reduction_id=None,stats_type='standard'):
+        if discretization_code is None:
+            self.discretizations=Discretization.objects.all()
+            self.discretizations=[d for d in self.discretizations if d.stats_type.type==stats_type]
+        else:
+            self.discretizations = Discretization.objects.filter(pandas_code=discretization_code)
+        if reduction_id==None:
+            self.reductions =Reduction.objects.filter(stats_type__type=stats_type)
+        else:
+            self.reductions = Reduction.objects.filter(id=reduction_id)
     
     def update_originals(self):
         super(BaseStats,self).update_originals()
@@ -131,16 +139,6 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
         return TemporalSerie.objects.filter(id=id),reduced_serie
     
 class BasicStats(BaseStats):
-    def update_informations(self,discretization_code=None,reduction_id=None):
-        if discretization_code is None:
-            self.discretizations=Discretization.objects.all()
-            self.discretizations=[d for d in self.discretizations if d.stats_type.type=="standard"]
-        else:
-            self.discretizations = Discretization.objects.filter(pandas_code=discretization_code)
-        if reduction_id==None:
-            self.reductions =Reduction.objects.filter(stats_type__type="standard")
-        else:
-            self.reductions = Reduction.objects.filter(id=reduction_id)
     def reduce(self,daily,discretization,reduction):
         gp = pd.Grouper(freq=discretization.pandas_code)
         discretized = daily.groupby(gp).agg(funcoes_reducao[reduction.type_pt_br])
@@ -149,17 +147,6 @@ class BasicStats(BaseStats):
         return date,data
 
 class RollingMean(BaseStats):
-    def update_informations(self,discretization_code=None,reduction_id=None):
-        if discretization_code is None:
-            self.discretizations=Discretization.objects.all()
-            self.discretizations=[d for d in self.discretizations if d.stats_type.type=="rolling mean"]
-        else:
-            self.discretizations = Discretization.objects.filter(pandas_code=discretization_code)
-        if reduction_id==None:
-            stats = Stats.objects
-            self.reductions =Reduction.objects.filter(stats_type__type="rolling mean")
-        else:
-            self.reductions = Reduction.objects.filter(id=reduction_id)
     def reduce(self,daily,discretization,reduction):
         daily_rolling_mean = daily.rolling(window=int(discretization.pandas_code),center=False).mean()
         hydrologic_years = self.hydrologic_years_dict(daily_rolling_mean)
@@ -171,7 +158,42 @@ class RollingMean(BaseStats):
                  for year in years  if not hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]) is (nan)]
         return date,data
     
+    
+class RateOfChange(BaseStats):
+        
+    def reduce(self,daily,discretization,reduction):
+        hydrologic_years = self.hydrologic_years_dict(daily)
+        years = sorted(list(hydrologic_years.keys())[1:])
+        data = []
+        for year in years:
+            df = hydrologic_years[year]
+            df=pd.DataFrame({'data':df.values},index=df.index)
+            df['dif'] = df['data'] - df['data'].shift(1)
+            r = df[eval("df['dif']"+funcoes_reducao[reduction.type_en_us]+'0')]['dif'].mean()
+            data.append(float(r))
+        date = [datetime(year.year,1,1) for year in years]
+        return date,data
+    
+class FrequencyOfChange(BaseStats):    
+    def reduce(self,daily,discretization,reduction):
+        hydrologic_years = self.hydrologic_years_dict(daily)
+        years = sorted(list(hydrologic_years.keys())[1:])
+        data = []
+        for year in years:
+            df = hydrologic_years[year]
+            df=pd.DataFrame({'data':df.values},index=df.index)
+            df['dif_unit'] = (df['data'] - df['data'].shift(1))/abs(df['data'] - df['data'].shift(1))
+            events = split(df['dif_unit'], where(eval("df['dif_unit']"+funcoes_reducao[reduction.type_en_us]+"df['dif_unit'].shift(1)"))[0])
+            print(events)
+            r = len(events)
+            data.append(float(r))
+
+        date = [datetime(year.year,1,1) for year in years]
+        return date,data
+    
 '''
+    
+
 class RollingMean(BaseStats):
     def update_informations(self,discretization_code=None,reduction_id=None):
         if discretization_code is None:

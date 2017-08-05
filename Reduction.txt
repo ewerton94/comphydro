@@ -1,0 +1,8 @@
+1,maximum,maximum,máxima,basic stats
+2,minimum,minimum,mínima,basic stats
+3,maximum,maximum,máxima,rolling mean
+4,minimum,minimum,mínima,rolling mean
+5,fall count,fall count,número de recessões,frequency of change
+6,rise count,rise count,número de ascensões,frequency of change
+7,fall rate,fall rate,razão de ascensão,rate of change
+8,rise rate,rise rate,razão de recessão,rate of change
