@@ -65,14 +65,14 @@ def stations(request):
     text=[]
     for station in Station.objects.all():
         text.append('<a href="/stations/%d/information">%s</a>'%(station.id,station))
-        lat.append(station.localization.y)
-        lon.append(station.localization.x)
+        lat.append(station.localization.coordinates.y)
+        lon.append(station.localization.coordinates.x)
     data=Data([Scattermapbox(lat=lat,lon=lon,mode='markers',marker=Marker(size=14,color='rgb(0, 50, 40)'),text=text,)])
     layout=Layout(autosize=True,margin=Margin(l=0,r=0,b=0,t=0,pad=0),hovermode='closest',mapbox=dict(accesstoken=mpt,bearing=0,center=dict(lat=float(lat[0]),lon=float(lon[0])),pitch=0,zoom=7,),)
     fig=dict(data=data,layout=layout)
     
     div=plot(fig, auto_open=False, output_type='div')
-    context={'BASE_URL':"",'stations':s,'graph':div}
+    context={'BASE_URL':"",'stations':stations,'graph':div}
     
     return render(request,'stations.html',context)          
  
