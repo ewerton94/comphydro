@@ -70,13 +70,14 @@ def station_information(request,**kwargs):
     variables=[(variable.id,variable.variable) for variable in info.variables]
     if request.method=="POST":
         stats = [
-            Stats(_("Rolling Mean"),'rolling_mean',variables,RollingMeanForm,request.POST),
-            Stats(_("Basic Stats"),'basic_stats',variables,BasicStatsForm,request.POST),
-            Stats(_("Rate of change"),'rate_of_change',variables,RateFrequencyOfChangeForm,request.POST),
-            Stats(_("Frequency of change"),'frequency_of_change',variables,RateFrequencyOfChangeForm,request.POST),
-            Stats(_("Indicators of Hydrologic Alterations"),'iha',variables,RateFrequencyOfChangeForm,request.POST),
+            Stats(request,_("Rolling Mean"),'rolling_mean',variables,RollingMeanForm),
+            Stats(request,_("Basic Stats"),'basic_stats',variables,BasicStatsForm),
+            Stats(request,_("Rate of change"),'rate_of_change',variables,RateFrequencyOfChangeForm),
+            Stats(request,_("Frequency of change"),'frequency_of_change',variables,RateFrequencyOfChangeForm),
+            Stats(request,_("Indicators of Hydrologic Alterations"),'iha',variables,RateFrequencyOfChangeForm),
         ]
         valid_stats = [stat for stat in stats if stat.form.is_valid()]
+        print(len(valid_stats))
         if len(valid_stats)>0:
             form = valid_stats[0].form
             data=form.cleaned_data
@@ -84,11 +85,11 @@ def station_information(request,**kwargs):
             url.args = {'variable':data['variable'],'discretization':data['discretization']}
             return HttpResponseRedirect("/%s/stats/%s/%s/%s"%(get_language(),valid_stats[0].short_name,kwargs['station_id'],url.url.replace("?","")))
     stats = [
-        Stats(_("Rolling Mean"),'rolling_mean',variables,RollingMeanForm),
-        Stats(_("Basic Stats"),'basic_stats',variables,BasicStatsForm),
-        Stats(_("Rate of change"),'rate_of_change',variables,RateFrequencyOfChangeForm),
-        Stats(_("Frequency of change"),'frequency_of_change',variables,RateFrequencyOfChangeForm),
-        Stats(_("Indicators of Hydrologic Alterations"),'iha',variables,IHAForm),
+        Stats(request,_("Rolling Mean"),'rolling_mean',variables,RollingMeanForm),
+        Stats(request,_("Basic Stats"),'basic_stats',variables,BasicStatsForm),
+        Stats(request,_("Rate of change"),'rate_of_change',variables,RateFrequencyOfChangeForm),
+        Stats(request,_("Frequency of change"),'frequency_of_change',variables,RateFrequencyOfChangeForm),
+        Stats(request,_("Indicators of Hydrologic Alterations"),'iha',variables,IHAForm),
     ]  
     return render(request,'station_information.html',{'BASE_URL':"",'sources':info.sources,
                                                       'originals':info.originals,

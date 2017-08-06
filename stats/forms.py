@@ -42,7 +42,7 @@ class RateFrequencyOfChangeForm(forms.Form):
         self.fields['discretization'].choices =list(rolling_mean_discretizations)
 
     variable = forms.ChoiceField(label=_("Data type")+":",widget=forms.Select(attrs={'class':'form-control'}))
-    discretization = forms.ChoiceField(label=_("Discretization")+":",required=False,
+    discretization = forms.ChoiceField(label=_("Discretization")+":",required=True,
                                          widget=forms.Select(attrs={'class':'form-control'}))
 
     

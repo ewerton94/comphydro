@@ -18,9 +18,10 @@ from .reads_data import ANA,ONS
 
 
 class Stats(object):
-    def __init__(self,name,short_name,variables,form,post=None):
+    def __init__(self,request,name,short_name,variables,form):
+        data = request.POST if short_name in request.POST else None
         self.name = name        
-        self.form=form(variables=variables,data=post)
+        self.form=form(variables=variables,data=data,prefix=short_name)
         self.short_name=short_name
 
 class StationInfo(object):
