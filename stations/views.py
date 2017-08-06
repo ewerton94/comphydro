@@ -73,7 +73,7 @@ def stations(request):
         lon.append(aux[1])
     print(text)
     data=Data([Scattermapbox(lat=lat,lon=lon,mode='markers',marker=Marker(size=14,color='rgb(0, 50, 40)'),text=text,)])
-    layout=Layout(autosize=True,hovermode='closest',mapbox=dict(accesstoken=mpt,bearing=0,center=dict(lat=float(lat[0]),lon=float(lon[0])),pitch=0,zoom=7,),)
+    layout=Layout(autosize=True,margin=Margin(l=0,r=0,b=0,t=0,pad=0),hovermode='closest',mapbox=dict(accesstoken=mpt,bearing=0,center=dict(lat=float(lat[0]),lon=float(lon[0])),pitch=0,zoom=7,),)
     fig=dict(data=data,layout=layout)
     
     div=plot(fig, auto_open=False, output_type='div')
