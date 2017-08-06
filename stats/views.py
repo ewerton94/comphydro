@@ -8,7 +8,7 @@ from stations.utils import StationInfo
 from stations.models import Station, Source, StationType, Localization,Coordinate
 
 from .models import Reduction,ReducedSerie,RollingMeanSerie
-from .stats import BasicStats,RollingMean,RateOfChange,FrequencyOfChange
+from .stats import BasicStats,RollingMean,RateOfChange,FrequencyOfChange,IHA
 
 
 class StatsView():
@@ -61,5 +61,14 @@ def frequency_of_change(request,**kwargs):
     return stats.get_data(kwargs['station_id'],'frequency of change',kwargs['filters'])
 
 def iha(request,**kwargs):
-    pass
+    g = IHA(kwargs['station_id'],kwargs['variable_id'])
+    group1=g.Group1()
+    group2=g.Group2()
+    print(group1)
+    print(group2)
+    return render(request,'iha.html',{'BASE_URL':"",'station':g.station,
+                                                             'aba':"IHA",
+                                           'group1':group1,
+                                           'group2':group2
+                                                         })
     

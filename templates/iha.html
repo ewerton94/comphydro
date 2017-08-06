@@ -1,0 +1,68 @@
+{% extends 'base_information.html' %}
+{% load i18n %}
+{% block title %}Station Information | {% endblock %}
+{% block title_head %}{% trans 'Station Information' %}{% endblock %}
+{% block subtitle %}{{ station }}{% endblock %}
+{% block data %}
+        
+
+        
+                   <div class="box box-success">
+            <div class="box-header with-border">
+             <i class="fa fa-files-o"></i>
+              <h3 class="box-title">{% blocktrans  %}Means{% endblocktrans %}</h3>
+
+              <div class="box-tools pull-right">
+                <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i>
+                </button>
+                <button type="button" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i></button>
+              </div>
+            </div>
+            <!-- /.box-header -->
+            <div class="box-body no-padding">
+                         
+                                 <table class="table">
+    <thead>
+      <tr>
+        <th>IHA Group</th>
+        <th>Pre-impact</th>
+        <th>Pos-impact</th>
+        <th>Deviation<br>Magnitude</th>
+        <th>Confidence limits<br>(low-high)</th>
+      </tr>
+    </thead>
+    <tbody>
+     <tr>
+         <td colspan="4" >Group 1 - Monthly Magnitude</td>
+     </tr>
+       {% for var in group1 %}
+      <tr>
+        <td>{{ var.title }}</td>
+        <td>{{ var.value }}</td>
+        <td>{{ var.value }}</td>
+        <td>{{ var.value }}</td>
+        <td>{{ var.value }}</td>
+      </tr>
+        {% endfor %}
+        
+    <tr>
+         <td colspan="4" >Group 2 - Magnitude and duration of annual extremes</td>
+     </tr>
+       {% for var in group2 %}
+      <tr>
+        <td>{{ var.title }}</td>
+        <td>{{ var.value }}</td>
+        <td>{{ var.value }}</td>
+        <td>{{ var.value }}</td>
+        <td>{{ var.value }}</td>
+      </tr>
+        {% endfor %}
+    </tbody>
+  </table>
+                         
+                          </div>
+            <!-- /.box-body -->
+          </div>
+{% endblock %}
+
+{% block stats %}{% endblock %}    

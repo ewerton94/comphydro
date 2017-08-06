@@ -55,7 +55,7 @@ class StationInfo(object):
         self.update_originals()
         self.update_variables_and_sources()
         for original in self.originals:
-            temporals = TemporalSerie.objects.filter(id=original.temporal_serie_id)
+            temporals = TemporalSerie.objects.filter(id=original.temporal_serie_id) 
             original.temporals = temporals
             daily_data=self.create_daily_data_pandas(temporals)
             self.xys=[[daily_data.index,daily_data['data'].values],]

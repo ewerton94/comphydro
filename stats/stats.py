@@ -20,7 +20,22 @@ funcoes_reducao = {'máxima':max,'mínima':min,'soma':sum, 'média':mean,'máxim
 meses = {1:"JAN",2:"FEB",3:"MAR",4:"APR",5:"MAY",6:"JUN",7:"JUL",8:"AUG",9:"SEP",10:"OCT",11:"NOV",12:"DEC"}
 
 
+def get_originals(variables,originals):
+    os=[]
+    for variable in variables:
+        originals_by_variable=[o for o in originals if o.variable==variable]
+        id_data_type = 2 if 2 in [o.consistency_level.id for o in originals_by_variable] else 1
+        os.append([o for o in originals_by_variable if o.consistency_level.id == id_data_type][0])
+    return os
 
+
+class Table:
+    def __init__(self,title,value):
+        self.title=title
+        self.value=value
+        
+    def __str__(self):
+        return str(self.title)+"  -  "+str(self.value)
 
 class generic_obj:
     pass
@@ -43,12 +58,7 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
     def update_originals(self):
         super(BaseStats,self).update_originals()
         self.update_variables_and_sources()
-        originals=[]
-        for variable in self.variables:
-            originals_by_variable=[o for o in self.originals if o.variable==variable]
-            id_data_type = 2 if 2 in [o.consistency_level.id for o in originals_by_variable] else 1
-            originals.append([o for o in originals_by_variable if o.consistency_level.id == id_data_type][0])
-        self.originals=originals
+        self.originals=get_originals(self.variables,self.originals)
         return self.originals
 
     def starting_month_hydrologic_year(self,df):
@@ -190,6 +200,48 @@ class FrequencyOfChange(BaseStats):
 
         date = [datetime(year.year,1,1) for year in years]
         return date,data
+    
+class IHA:
+    def __init__(self,station_id,variable_id=1):
+        self.station = Station.objects.get(id=station_id)
+        self.variable = Variable.objects.get(id=variable_id)
+        self.originals = OriginalSerie.objects.filter(station=self.station)
+        self.originals=get_originals([self.variable,],self.originals)
+        temporals = TemporalSerie.objects.filter(id=self.originals[0].temporal_serie_id)
+        data = [o.data if not o is None else nan for o in temporals]
+        date = [o.date for o in temporals]
+        df = pd.DataFrame({"data" : data}, index=pd.DatetimeIndex(date))
+        gp = pd.Grouper(freq='D',sort=True)
+        daily_data = df.groupby(gp).mean()
+        self.daily_data = daily_data
+    def Group1(self):
+        daily_data = self.daily_data
+        daily_data['month']=[o.month for o in daily_data.index]
+        mean_by_month = daily_data.groupby('month').mean()
+        months = [d for d in mean_by_month.index]
+        data = [round(d[0],2) for d in mean_by_month.values]
+        month_names=['January','February','March','April','May','June','July','August','September','October','November','December']
+        return [Table(month_names[i],data[i]) for i in range(12)]
+    def Group2(self):
+        datas=[]
+        discretizations = list(Discretization.objects.filter(stats_type__type = 'rolling mean'))
+        discretizations.sort(key=lambda x:int(x.pandas_code))
+        for discretization in discretizations:
+            for reduction in Reduction.objects.filter(stats_type__type = 'rolling mean'):
+                basic_stats = RollingMean(self.station.id,self.variable.id)
+                date,data = basic_stats.reduce(self.daily_data,discretization,reduction)
+                data_mean=round(sum(data)/len(data),2)
+                line = Table('Annual %(reduction)s %(discretization)s means'%{'reduction':reduction.type,
+                                                                                   'discretization':discretization.type},data_mean)
+                datas.append(line)
+        return datas
+
+        
+        
+        
+        
+    
+    
     
 '''
     
