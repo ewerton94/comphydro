@@ -61,7 +61,7 @@ def frequency_of_change(request,**kwargs):
     return stats.get_data(kwargs['station_id'],'frequency of change',kwargs['filters'])
 
 def iha(request,**kwargs):
-    g = IHA(kwargs['station_id'],kwargs['variable_id'])
+    g = IHA(kwargs['station_id'],kwargs['station_id'],kwargs['variable_id'])
     group1=g.Group1()
     group2=g.Group2()
     print(group1)

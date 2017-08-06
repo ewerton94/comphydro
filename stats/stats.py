@@ -30,9 +30,10 @@ def get_originals(variables,originals):
 
 
 class Table:
-    def __init__(self,title,value):
+    def __init__(self,title,pre_data,pos_data):
         self.title=title
-        self.value=value
+        self.pre_data=pre_data
+        self.pos_data=pos_data
         
     def __str__(self):
         return str(self.title)+"  -  "+str(self.value)
@@ -201,38 +202,58 @@ class FrequencyOfChange(BaseStats):
         date = [datetime(year.year,1,1) for year in years]
         return date,data
     
+    
+    
+    
+def get_daily_data(station,variable):
+    originals = OriginalSerie.objects.filter(station=station)
+    originals=get_originals([variable,],originals)
+    temporals = TemporalSerie.objects.filter(id=originals[0].temporal_serie_id)
+    data = [o.data if not o is None else nan for o in temporals]
+    date = [o.date for o in temporals]
+    df = pd.DataFrame({"data" : data}, index=pd.DatetimeIndex(date))
+    gp = pd.Grouper(freq='D',sort=True)
+    return df.groupby(gp).mean()
+    
 class IHA:
-    def __init__(self,station_id,variable_id=1):
+    def __init__(self,station_id,other_id,variable_id=1):
         self.station = Station.objects.get(id=station_id)
-        self.variable = Variable.objects.get(id=variable_id)
-        self.originals = OriginalSerie.objects.filter(station=self.station)
-        self.originals=get_originals([self.variable,],self.originals)
-        temporals = TemporalSerie.objects.filter(id=self.originals[0].temporal_serie_id)
-        data = [o.data if not o is None else nan for o in temporals]
-        date = [o.date for o in temporals]
-        df = pd.DataFrame({"data" : data}, index=pd.DatetimeIndex(date))
-        gp = pd.Grouper(freq='D',sort=True)
-        daily_data = df.groupby(gp).mean()
-        self.daily_data = daily_data
+        self.other = Station.objects.get(id=station_id)
+        self.variable = Variable.objects.get(id=variable_id)    
+        self.daily = {'pre_data':get_daily_data(self.station,self.variable),
+                      'pos_data':get_daily_data(self.other,self.variable)
+                     }
+        
     def Group1(self):
-        daily_data = self.daily_data
-        daily_data['month']=[o.month for o in daily_data.index]
-        mean_by_month = daily_data.groupby('month').mean()
-        months = [d for d in mean_by_month.index]
-        data = [round(d[0],2) for d in mean_by_month.values]
         month_names=['January','February','March','April','May','June','July','August','September','October','November','December']
-        return [Table(month_names[i],data[i]) for i in range(12)]
+        data={}
+        for type_data in self.daily:
+            daily_data = self.daily[type_data]
+            daily_data['month']=[o.month for o in daily_data.index]
+            mean_by_month = daily_data.groupby('month').mean()
+            months = [d for d in mean_by_month.index]
+            data[type_data] = [round(d[0],2) for d in mean_by_month.values]
+        return [Table(month_names[i],data['pre_data'][i],data['pos_data'][i]) for i in range(12)]
+    
     def Group2(self):
         datas=[]
         discretizations = list(Discretization.objects.filter(stats_type__type = 'rolling mean'))
         discretizations.sort(key=lambda x:int(x.pandas_code))
         for discretization in discretizations:
             for reduction in Reduction.objects.filter(stats_type__type = 'rolling mean'):
-                basic_stats = RollingMean(self.station.id,self.variable.id)
-                date,data = basic_stats.reduce(self.daily_data,discretization,reduction)
-                data_mean=round(sum(data)/len(data),2)
-                line = Table('Annual %(reduction)s %(discretization)s means'%{'reduction':reduction.type,
-                                                                                   'discretization':discretization.type},data_mean)
+                data_mean = {}
+                for type_data in self.daily:
+                    daily_data = self.daily[type_data]
+                    basic_stats = RollingMean(self.station.id,self.variable.id)
+                    date,data = basic_stats.reduce(daily_data,discretization,reduction)
+                    data_mean[type_data]=round(sum(data)/len(data),2)
+                    
+                line = Table('Annual %(reduction)s %(discretization)s means' % 
+                             {'reduction':reduction.type,
+                              'discretization':discretization.type},
+                             data_mean['pre_data'],
+                             data_mean['pos_data'],
+                )
                 datas.append(line)
         return datas
 
