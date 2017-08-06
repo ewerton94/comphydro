@@ -9,7 +9,7 @@ from django.utils.translation import get_language,gettext as _
 
 from data.models import Discretization,Unit,Variable,ConsistencyLevel,OriginalSerie,TemporalSerie
 from data.views import plot_web
-from stats.forms import RollingMeanForm,BasicStatsForm
+from stats.forms import RollingMeanForm,BasicStatsForm,RateFrequencyOfChangeForm
 #from stats.stats import Stats
 
 from .forms import CreateStationForm
@@ -23,6 +23,15 @@ class Stats(object):
         self.name = name        
         self.form=form(variables=variables,data=data,prefix=short_name)
         self.short_name=short_name
+        
+def get_stats_list(request,variables):
+    return [
+            Stats(request,_("Rolling Mean"),'rolling_mean',variables,RollingMeanForm),
+            Stats(request,_("Basic Stats"),'basic_stats',variables,BasicStatsForm),
+            Stats(request,_("Rate of change"),'rate_of_change',variables,RateFrequencyOfChangeForm),
+            Stats(request,_("Frequency of change"),'frequency_of_change',variables,RateFrequencyOfChangeForm),
+            Stats(request,_("Indicators of Hydrologic Alterations"),'iha',variables,RateFrequencyOfChangeForm),
+        ]
 
 class StationInfo(object):
     def __init__(self,station_id,*variables):

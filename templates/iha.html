@@ -27,7 +27,7 @@
         <th>IHA Group</th>
         <th>Pre-impact</th>
         <th>Pos-impact</th>
-        <th>Deviation<br>Magnitude</th>
+        <th>Deviation<br>Magnitude/%</th>
         <th>Confidence limits<br>(low-high)</th>
       </tr>
     </thead>
@@ -40,7 +40,7 @@
         <td>{{ var.title }}</td>
         <td>{{ var.pre_data }}</td>
         <td>{{ var.pos_data }}</td>
-        <td>{{ var.value }}</td>
+        <td>{{ var.deviation_magnitude }}/{{ var.percent }}</td>
         <td>{{ var.value }}</td>
       </tr>
         {% endfor %}

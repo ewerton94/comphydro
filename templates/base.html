@@ -120,9 +120,9 @@
            
             
            
-           
-            <li class="{% if aba == 'rolling_mean' %}active{% endif %}"><a href="{{ BASE_URL }}/{{ LANGUAGE_CODE }}/stats/rolling_mean/{{ station.id }}"><i class="fa fa-circle-o"></i>{% trans 'Rolean mean' %}</a></li>
-            <li class="{% if aba == 'basic_stats' %}active{% endif %}"><a href="{{ BASE_URL }}/{{ LANGUAGE_CODE }}/stats/basic_stats/{{ station.id }}"><i class="fa fa-circle-o"></i>{% trans 'Basic Stats' %}</a></li>
+           {% for stat in stats %}
+            <li class="{% if aba == stat.short_name %}active{% endif %}"><a href="{{ BASE_URL }}/{{ LANGUAGE_CODE }}/stats/{{ stat.short_name }}/{{ station.id }}"><i class="fa fa-circle-o"></i>{{ stat.name }}</a></li>
+            {% endfor %}
           </ul>
         </li>
         

@@ -34,6 +34,8 @@ class Table:
         self.title=title
         self.pre_data=pre_data
         self.pos_data=pos_data
+        self.deviation_magnitude = pre_data-pos_data
+        self.percent = int(self.deviation_magnitude/pre_data*100)
         
     def __str__(self):
         return str(self.title)+"  -  "+str(self.value)

@@ -49,18 +49,18 @@
               </div>
             </div>
             <div class="box-body border-radius-none">
-              {% if stat.form %}
+            {% if stat.form %}
               
-    <form action="" method="POST" class="formularioEmail" enctype="multipart/form-data">
+            <form action="" method="POST" class="formularioEmail" enctype="multipart/form-data">
              
                 {% csrf_token %}
-                {% for field in stat.form %}
+                    {% for field in stat.form %}
                 <div class = "form-group">
                    
                   
-                       {% if field.errors %}
-                {{ field.errors }}
-                {% endif %}
+                        {% if field.errors %}
+                            {{ field.errors }}
+                        {% endif %}
                        
                      
                             <label for="{{field.name}}"  >{{field.label}}</label>
@@ -73,7 +73,7 @@
                     
                 </div>
                 
-                {% endfor %}
+                    {% endfor %}
                 
      
                 <button type="submit" name="{{ stat.form.prefix }}" value="Submit" class="btn btn-primary btn-lg btn-block">Enviar</button>
@@ -82,7 +82,7 @@
 
 
 
-{%  endif %}
+            {%  endif %}
             </div>
             <!-- /.box-body -->
             <!-- /.box-footer -->
