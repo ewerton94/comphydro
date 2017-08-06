@@ -21,7 +21,11 @@
     
 {% endfor %}
 </ul>
-        
+    {% if graph %}
+    <div style="width:1000;height: 600">
+    {{ graph|safe }}
+    </div>
+    {% endif %}  
       <!-- /.row (main row) -->
 
     </section>
