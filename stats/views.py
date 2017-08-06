@@ -26,7 +26,6 @@ class StatsView():
             filters.get('reduction',None),
             stats_name
         )
-        
         basic_stats.get_or_create_reduced_series()
         return render(self.request,'stats_information.html',{'BASE_URL':"",'sources':basic_stats.sources,
                                                           'reduceds':basic_stats.reduceds,
@@ -60,3 +59,7 @@ def frequency_of_change(request,**kwargs):
     else:
         kwargs['filters']+="discretization=A"
     return stats.get_data(kwargs['station_id'],'frequency of change',kwargs['filters'])
+
+def iha(request,**kwargs):
+    pass
+    

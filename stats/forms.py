@@ -5,7 +5,7 @@ from django import forms
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
-from data.models import Discretization
+from data.models import Discretization,OriginalSerie
 from stations.models import Station
 
 
@@ -50,11 +50,8 @@ class RateFrequencyOfChangeForm(forms.Form):
 class IHAForm(forms.Form):
     def __init__(self, variables=[], *args, **kwargs):
         super(IHAForm, self).__init__(*args, **kwargs)
-        self.fields['variable'].choices = list(variables)
-        discretizacao = Discretization.objects.get(type_en_us='annual')
-        rolling_mean_discretizations = ((discretizacao.pandas_code,discretizacao.type),)
-        self.fields['discretization'].choices =list(rolling_mean_discretizations)
-
-    variable = forms.ChoiceField(label=_("Data type")+":",widget=forms.Select(attrs={'class':'form-control'}))
-    discretization = forms.ChoiceField(label=_("Discretization")+":",required=False,
-                                         widget=forms.Select(attrs={'class':'form-control'}))
+    original = forms.ChoiceField(label=_("Data to compare")+":",widget=forms.Select(attrs={'class':'form-control'}),choices=
+                                 ((o.id,o) for o in OriginalSerie.objects.all())
+                                )
+    initial = forms.CharField(label=_("Initial Date")+":",widget=forms.TextInput(attrs={'class':'form-control'}))
+    final = forms.ChoiceField(label=_("Final Date")+":",widget=forms.TextInput(attrs={'class':'form-control'}))
