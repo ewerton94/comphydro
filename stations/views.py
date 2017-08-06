@@ -17,6 +17,8 @@ from .models import Station, Source, StationType, Localization,Coordinate
 from .reads_data import ANA,ONS
 from .utils import StationInfo
 
+from plotly.graph_objs import *
+from plotly.offline import plot
 
         
 @login_required
@@ -58,7 +60,26 @@ def create_station(request):
 
 def stations(request):
     s = Station.objects.all()
-    return render(request,'stations.html',{'BASE_URL':"",'stations':s})        
+    
+    mpt='pk.eyJ1IjoiYWRlbHNvbmpyIiwiYSI6ImNqNTV0czRkejBnMnkzMnBtdXdsbmRlbDcifQ.Ox8xbLTD_cD7h3uEz13avQ'
+    lat=[]
+    lon=[]
+    text=[]
+    for i in range(len(s)):
+        text.append('<a href="/stations/%d/information">%s</a>'%(s[i].id,s[i]))
+        aux=s[i].localization.__unicode__()
+        aux=aux.split()
+        lat.append(aux[0])
+        lon.append(aux[1])
+    print(text)
+    data=Data([Scattermapbox(lat=lat,lon=lon,mode='markers',marker=Marker(size=14,color='rgb(0, 50, 40)'),text=text,)])
+    layout=Layout(autosize=True,hovermode='closest',mapbox=dict(accesstoken=mpt,bearing=0,center=dict(lat=-9.62,lon=-37.7),pitch=0,zoom=7,),)
+    fig=dict(data=data,layout=layout)
+    
+    div=plot(fig, auto_open=False, output_type='div')
+    context={'BASE_URL':"",'stations':s,'graph':div}
+    
+    return render(request,'stations.html',context)          
  
 
 def station_information(request,**kwargs):
