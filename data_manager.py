@@ -1,13 +1,47 @@
-#from data.models import Stats,Discretization,Unit,Variable,ConsistencyLevel
-#classes = {'stats':Stats,'discretization':Discretization,'unit':Unit,'variable':Variable,'ConsistencyLevel':ConsistencyLevel}
+from data.models import Stats,Discretization,Unit,Variable,ConsistencyLevel
 from stations.models import Source, StationType, Localization,Coordinate
-#classes = {'Source':Source, 'StationType':StationType, 'Localization':Localization,'Coordinate':Coordinate}
 from stats.models import Reduction
-classes = {'Reduction':Reduction}
+classes = {'Stats':Stats,'Discretization':Discretization,'Unit':Unit,'Variable':Variable,'ConsistencyLevel':ConsistencyLevel,'Source':Source, 'StationType':StationType, 'Coordinate':Coordinate, 'Localization':Localization,'Reduction':Reduction}
+from django.db import models
+
+import json
+
+'''
+
+dics={}
+
 for classe in classes:
-    with open(classe+".txt",'w',encoding="utf-8") as f:
-        Classe=classes[classe]
-        fields = [f.name for f in Classe._meta.fields]
-        for obj in Classe.objects.all():
-            nomes = [str(eval('obj.%s'%f)) for f in fields]
-            f.write(",".join(nomes)+"\n")
+    dic={}
+    Classe = classes[classe]
+    dics[classe]={}
+    fields = [f for f in Classe._meta.fields]
+    dics[classe]['fields']=[]
+    for obj in Classe.objects.all():
+        fs={}
+        for f in fields:
+            if f.name!='id':
+                if isinstance(f,models.ForeignKey):
+                    fs["%s_id"%f.name] = eval('obj.%s.id'%f.name)
+                else:
+                    fs[f.name]=eval('obj.%s'%f.name)
+        dics[classe]['fields'].append(fs)
+
+with open('data.json', 'w') as outfile:
+    json.dump(dics, outfile)
+    
+'''
+
+with open('data.json') as infile:
+    file = infile.read()
+    dics = json.loads(file)
+
+for classe in dics:
+    classes[classe].objects.bulk_create([
+        classes[classe](**obj) for obj in dics[classe]['fields']  
+    ])
+    print(classe)
+    
+    
+
+
+

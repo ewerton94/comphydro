@@ -16,6 +16,7 @@ class TemporalSerie(models.Model):
         
 
 class Stats(models.Model):
+    id = models.AutoField(primary_key=True)
     def __str__(self):
         return self.type
     type = models.CharField(max_length=50,verbose_name = _('type'))
