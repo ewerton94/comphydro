@@ -90,6 +90,61 @@ class Base(metaclass=ABCMeta):
     
     
 
+    
+    
+    
+import xlrd
+from datetime import datetime
+
+def xlread(arq_xls):
+	"""Função que ler arquivos .xls"""
+	xls = xlrd.open_workbook(arq_xls)
+	plan = xls.sheets()[0]
+	for i in range(plan.nrows):
+		yield plan.row_values(i)
+
+
+
+
+class Chesf(Base):
+    def le_dados(self,temp_dir):
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        aux=''
+        arq="defluencia_db.xls"
+        data=[]
+        dado=[]
+        for linha in xlread(os.path.join(dir_path,arq)):
+            if linha[1]!=aux:
+                d=1
+                org=linha[1].split("/")
+                data.append(datetime(int(org[1]), int(org[0]), d,0,0))
+                aux=linha[1]
+                dado.append(linha[2])
+            else:
+                if linha[2]=='':
+                    d+=1
+                    org=linha[1].split("/")
+                    data.append(datetime(int(org[1]), int(org[0]), d,0,0))
+                    dado.append(None)
+                else:
+                    d+=1
+                    org=linha[1].split("/")
+                    data.append(datetime(int(org[1]), int(org[0]), d,0,0))
+                    dado.append(linha[2])
+        #CRIANDO DATAFRAME - DATAS COMO INDICE DAS VAZÕES
+        df = pd.DataFrame({"Vazão":list(dado)},index = pd.DatetimeIndex(data))
+        return df
+    def obtem_nome_posto(self,estacao):
+        return "Xingó",False
+    def executar(self,posto,variavel):
+        if variavel.variable_en_us != "flow":
+            return _("There is no data from '%s' variable in this station.")%str(variavel)
+        print ('** %s **' % (posto.code, )) 
+        df = self.le_dados('Temp_dir')
+        cria_serie_original(df.values,df.index,posto,variavel,1)
+        print ('** %s ** (concluído)' % (posto.code,))
+
+
 class ONS(Base):
     def le_dados(self,temp_dir):
         dir_path = os.path.dirname(os.path.realpath(__file__))

@@ -54,4 +54,5 @@ class Station(models.Model):
     localization = models.ForeignKey(Localization,verbose_name=_('localization'))
     def __str__(self):
         return '%s %s (%s)'%(self.name,self.source.source,self.code)
+    
 
