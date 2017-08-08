@@ -31,6 +31,7 @@ def get_stats_list(request,variables):
             Stats(request,_("Rate of change"),'rate_of_change',variables,RateFrequencyOfChangeForm),
             Stats(request,_("Frequency of change"),'frequency_of_change',variables,RateFrequencyOfChangeForm),
             Stats(request,_("Indicators of Hydrologic Alterations"),'iha',variables,RateFrequencyOfChangeForm),
+            Stats(request,_("Julian Date"),'julian_date',variables,RateFrequencyOfChangeForm),
         ]
 
 class StationInfo(object):

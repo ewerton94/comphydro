@@ -8,7 +8,7 @@ from stations.utils import StationInfo,get_stats_list
 from stations.models import Station, Source, StationType, Localization,Coordinate
 
 from .models import Reduction,ReducedSerie,RollingMeanSerie
-from .stats import BasicStats,RollingMean,RateOfChange,FrequencyOfChange,IHA
+from .stats import BasicStats,RollingMean,RateOfChange,FrequencyOfChange,IHA,JulianDate
 
 
 class StatsView():
@@ -59,6 +59,14 @@ def frequency_of_change(request,**kwargs):
     else:
         kwargs['filters']+="discretization=A"
     return stats.get_data(kwargs['station_id'],'frequency of change',kwargs['filters'])
+
+def julian_date(request,**kwargs):
+    stats = StatsView(request,JulianDate)
+    if 'discretization' in kwargs['filters']:
+        kwargs['filters']=kwargs['filters'].split('discretization')[0]+"discretization=A"
+    else:
+        kwargs['filters']+="discretization=A"
+    return stats.get_data(kwargs['station_id'],'julian date',kwargs['filters'])
 
 def iha(request,**kwargs):
     filters = furl("?"+kwargs['filters']).args

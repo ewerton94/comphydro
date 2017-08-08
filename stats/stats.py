@@ -173,9 +173,12 @@ class RollingMean(BaseStats):
     
   
 
-class RateOfChange(BaseStats):
+class BaseAnnualEvents(BaseStats,metaclass=ABCMeta):
     
-        
+    @abstractmethod
+    def get_reduced_value(self,df,reduction):
+        pass
+    
     def reduce(self,daily,discretization,reduction):
         hydrologic_years = self.hydrologic_years_dict(daily)
         years = sorted(list(hydrologic_years.keys())[1:])
@@ -183,64 +186,53 @@ class RateOfChange(BaseStats):
         for year in years:
             df = hydrologic_years[year]
             df=pd.DataFrame({'data':df.values},index=df.index)
-            df['dif'] = df['data'] - df['data'].shift(1)
-            r = df[eval("df['dif']"+funcoes_reducao[reduction.type_en_us]+'0')]['dif'].mean()
-            data.append(float(r))
+            data.append(float(self.get_reduced_value(df,reduction)))
         date = [datetime(year.year,1,1) for year in years]
         return date,data
     
 
-class RateOfChange(BaseStats):
+class RateOfChange(BaseAnnualEvents):
     
-        
-    def reduce(self,daily,discretization,reduction):
-        hydrologic_years = self.hydrologic_years_dict(daily)
-        years = sorted(list(hydrologic_years.keys())[1:])
-        data = []
-        for year in years:
-            df = hydrologic_years[year]
-            df=pd.DataFrame({'data':df.values},index=df.index)
-            df['dif'] = df['data'] - df['data'].shift(1)
-            r = df[eval("df['dif']"+funcoes_reducao[reduction.type_en_us]+'0')]['dif'].mean()
-            data.append(float(r))
-        date = [datetime(year.year,1,1) for year in years]
-        return date,data
+    def get_reduced_value(self,df,reduction):
+        df['dif'] = df['data'] - df['data'].shift(1)
+        return df[eval("df['dif']"+funcoes_reducao[reduction.type_en_us]+'0')]['dif'].mean()
     
-class FrequencyOfChange(BaseStats):    
-    def reduce(self,daily,discretization,reduction):
-        hydrologic_years = self.hydrologic_years_dict(daily)
-        years = sorted(list(hydrologic_years.keys())[1:])
-        data = []
-        for year in years:
-            df = hydrologic_years[year]
-            df=pd.DataFrame({'data':df.values},index=df.index)
-            df['dif_unit'] = (df['data'] - df['data'].shift(1))/abs(df['data'] - df['data'].shift(1))
-            events = split(df['dif_unit'], where(eval("df['dif_unit']"+funcoes_reducao[reduction.type_en_us]+"df['dif_unit'].shift(1)"))[0])
-            print(events)
-            r = len(events)
-            data.append(float(r))
+    
+class FrequencyOfChange(BaseAnnualEvents):
+    
+    def get_reduced_value(self,df,reduction):
+        df['dif_unit'] = (df['data'] - df['data'].shift(1))/abs(df['data'] - df['data'].shift(1))
+        events = split(df['dif_unit'], where(eval("df['dif_unit']"+funcoes_reducao[reduction.type_en_us]+"df['dif_unit'].shift(1)"))[0])
+        return len(events)
+    
+class FrequencyOfPulses(BaseAnnualEvents):
+    
+    def get_reduced_value(self,df,reduction):
+        df['dif_unit'] = (df['data'] - df['data'].shift(1))/abs(df['data'] - df['data'].shift(1))
+        events = split(df['dif_unit'], where(eval("df['dif_unit']"+funcoes_reducao[reduction.type_en_us]+"df['dif_unit'].shift(1)"))[0])
+        return len(events)
+    
+class DurationOfPulses(BaseAnnualEvents):
+    
+    def get_reduced_value(self,df,reduction):
+        df['dif_unit'] = (df['data'] - df['data'].shift(1))/abs(df['data'] - df['data'].shift(1))
+        events = split(df['dif_unit'], where(eval("df['dif_unit']"+funcoes_reducao[reduction.type_en_us]+"df['dif_unit'].shift(1)"))[0])
+        return len(events)
+    
+    
+class JulianDate(BaseAnnualEvents):
+    
+    def get_reduced_value(self,df,reduction):
+        reduction_abreviations = {'maximum':'max','minimum':'min'}
+        print(df.idxmax())
+        print(df.idxmin())
+        date_maximum = pd.DatetimeIndex(eval('df.idx%s().values'%reduction_abreviations[reduction.type_en_us]))[0]
+        julian_seconds = date_maximum-datetime(date_maximum.year,1,1)
+        return julian_seconds.days
 
-        date = [datetime(year.year,1,1) for year in years]
-        return date,data
-    
-    
-class FrequencyOfPulses(BaseStats):    
-    def reduce(self,daily,discretization,reduction):
-        hydrologic_years = self.hydrologic_years_dict(daily)
-        years = sorted(list(hydrologic_years.keys())[1:])
-        data = []
-        for year in years:
-            df = hydrologic_years[year]
-            df=pd.DataFrame({'data':df.values},index=df.index)
-            df['dif_unit'] = (df['data'] - df['data'].shift(1))/abs(df['data'] - df['data'].shift(1))
-            events = split(df['dif_unit'], where(eval("df['dif_unit']"+funcoes_reducao[reduction.type_en_us]+"df['dif_unit'].shift(1)"))[0])
-            print(events)
-            r = len(events)
-            data.append(float(r))
 
-        date = [datetime(year.year,1,1) for year in years]
-        return date,data
-    
+
+
     
 def get_daily_data(station,variable):
     originals = OriginalSerie.objects.filter(station=station)
