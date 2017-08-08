@@ -224,8 +224,6 @@ class JulianDate(BaseAnnualEvents):
     
     def get_reduced_value(self,df,reduction):
         reduction_abreviations = {'maximum':'max','minimum':'min'}
-        print(df.idxmax())
-        print(df.idxmin())
         date_maximum = pd.DatetimeIndex(eval('df.idx%s().values'%reduction_abreviations[reduction.type_en_us]))[0]
         julian_seconds = date_maximum-datetime(date_maximum.year,1,1)
         return julian_seconds.days
