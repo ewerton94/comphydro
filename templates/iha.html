@@ -33,7 +33,7 @@
     </thead>
     <tbody>
      <tr>
-         <td colspan="4" >Group 1 - Monthly Magnitude</td>
+         <td colspan="4" ><b>Group 1 - Monthly Magnitude</b></td>
      </tr>
        {% for var in group1 %}
       <tr>
@@ -46,17 +46,63 @@
         {% endfor %}
         
     <tr>
-         <td colspan="4" >Group 2 - Magnitude and duration of annual extremes</td>
+         <td colspan="4" ><b>Group 2 - Magnitude and duration of annual extremes</b></td>
      </tr>
        {% for var in group2 %}
       <tr>
         <td>{{ var.title }}</td>
         <td>{{ var.pre_data }}</td>
         <td>{{ var.pos_data }}</td>
-        <td>{{ var.value }}</td>
+        <td>{{ var.deviation_magnitude }}/{{ var.percent }}</td>
         <td>{{ var.value }}</td>
       </tr>
         {% endfor %}
+
+        
+    <tr>
+         <td colspan="4" ><b>Group 3 - Timing of annual extremes</b></td>
+     </tr>
+       {% for var in group3 %}
+      <tr>
+        <td>{{ var.title }}</td>
+        <td>{{ var.pre_data }}</td>
+        <td>{{ var.pos_data }}</td>
+        <td>{{ var.deviation_magnitude }}/{{ var.percent }}</td>
+        <td>{{ var.value }}</td>
+      </tr>
+        {% endfor %}
+
+                
+    <tr>
+         <td colspan="4" ><b>Group 4 - Rate and Frequency of change</b></td>
+     </tr>
+       {% for var in group4 %}
+      <tr>
+        <td>{{ var.title }}</td>
+        <td>{{ var.pre_data }}</td>
+        <td>{{ var.pos_data }}</td>
+        <td>{{ var.deviation_magnitude }}/{{ var.percent }}</td>
+        <td>{{ var.value }}</td>
+      </tr>
+        {% endfor %}
+        
+
+
+                
+    <tr>
+         <td colspan="4" ><b>Group 5 - Rate and Frequency of change</b></td>
+     </tr>
+       {% for var in group5 %}
+      <tr>
+        <td>{{ var.title }}</td>
+        <td>{{ var.pre_data }}</td>
+        <td>{{ var.pos_data }}</td>
+        <td>{{ var.deviation_magnitude }}/{{ var.percent }}</td>
+        <td>{{ var.value }}</td>
+      </tr>
+        {% endfor %}
+        
+        
     </tbody>
   </table>
                          

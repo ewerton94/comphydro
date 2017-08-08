@@ -1,13 +1,15 @@
+import json
 from data.models import Stats,Discretization,Unit,Variable,ConsistencyLevel
 from stations.models import Source, StationType, Localization,Coordinate
 from stats.models import Reduction
-classes = {'Stats':Stats,'Discretization':Discretization,'Unit':Unit,'Variable':Variable,'ConsistencyLevel':ConsistencyLevel,'Source':Source, 'StationType':StationType, 'Coordinate':Coordinate, 'Localization':Localization,'Reduction':Reduction}
 from django.db import models
 
-import json
+classes = {'Stats':Stats,'Discretization':Discretization,'Unit':Unit,'Variable':Variable,'ConsistencyLevel':ConsistencyLevel,'Source':Source, 'StationType':StationType, 'Coordinate':Coordinate, 'Localization':Localization,'Reduction':Reduction}
+
 
 '''
 
+#Código utilizado caso queira exportar os dados do seu banco de dados:
 dics={}
 
 for classe in classes:
@@ -39,9 +41,5 @@ for classe in dics:
     classes[classe].objects.bulk_create([
         classes[classe](**obj) for obj in dics[classe]['fields']  
     ])
-    print(classe)
-    
-    
-
 
 

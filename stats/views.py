@@ -70,15 +70,21 @@ def julian_date(request,**kwargs):
 
 def iha(request,**kwargs):
     filters = furl("?"+kwargs['filters']).args
-    g = IHA(kwargs['station_id'],kwargs['station_id'],filters.get('variable',1))
+    g = IHA(kwargs['station_id'],kwargs['other_id'],filters.get('variable',1))
     group1=g.Group1()
     group2=g.Group2()
+    group3=g.Group3()
+    group4=g.Group4()
+    group5=g.Group5()
     sources=set([g.station.source,g.other.source])
     return render(request,'iha.html',{'BASE_URL':"",'station':g.station,
                                                              'aba':"IHA",
                                       'sources':sources,
                                       'stats':get_stats_list(request,[g.variable,]),
                                            'group1':group1,
-                                           'group2':group2
+                                           'group2':group2,
+                                           'group3':group3,
+                                           'group4':group4,
+                                           'group5':group5,
                                                          })
     

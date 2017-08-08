@@ -219,6 +219,8 @@ class DurationOfPulses(BaseAnnualEvents):
         events = split(df['dif_unit'], where(eval("df['dif_unit']"+funcoes_reducao[reduction.type_en_us]+"df['dif_unit'].shift(1)"))[0])
         return len(events)
     
+
+    
     
 class JulianDate(BaseAnnualEvents):
     
@@ -245,7 +247,7 @@ def get_daily_data(station,variable):
 class IHA:
     def __init__(self,station_id,other_id,variable_id=1):
         self.station = Station.objects.get(id=station_id)
-        self.other = Station.objects.get(id=station_id)
+        self.other = Station.objects.get(id=other_id)
         self.variable = Variable.objects.get(id=variable_id)    
         self.daily = {'pre_data':get_daily_data(self.station,self.variable),
                       'pos_data':get_daily_data(self.other,self.variable)
@@ -282,6 +284,51 @@ class IHA:
                              data_mean['pos_data'],
                 )
                 datas.append(line)
+        return datas
+    
+    def Group3(self):
+        datas=[]
+        for reduction in Reduction.objects.filter(stats_type__type = 'julian date'):
+            data_mean = {}
+            discretization = Discretization.objects.get(type_en_us="annual")
+            for type_data in self.daily:
+                daily_data = self.daily[type_data]
+                julian = JulianDate(self.station.id,self.variable.id)
+                date,data = julian.reduce(daily_data,discretization,reduction)
+                data_mean[type_data]=round(sum(data)/len(data),2)
+            line = Table('Julian date of annual %(reduction)s' % 
+                             {'reduction':reduction.type,
+                              'discretization':discretization.type},
+                             data_mean['pre_data'],
+                             data_mean['pos_data'],
+            )
+            datas.append(line)
+        return datas
+            
+    
+    def Group4(self):
+        pass
+                
+    def Group5(self):
+        datas=[]
+        classes={'frequency of change':FrequencyOfChange,'rate of change':RateOfChange}
+        for type_classe in classes:
+            for reduction in Reduction.objects.filter(stats_type__type = type_classe):
+                data_mean = {}
+                discretization = Discretization.objects.get(type_en_us="annual")
+                for type_data in self.daily:
+                    daily_data = self.daily[type_data]
+                    julian = classes[type_classe](self.station.id,self.variable.id)
+                    date,data = julian.reduce(daily_data,discretization,reduction)
+                    data_mean[type_data]=round(sum(data)/len(data),2)
+                line = Table('%(reduction)s' % 
+                                 {'reduction':reduction.type,
+                                  'discretization':discretization.type},
+                                 data_mean['pre_data'],
+                                 data_mean['pos_data'],
+                )
+                datas.append(line)
+                
         return datas
 
         

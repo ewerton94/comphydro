@@ -7,5 +7,5 @@ urlpatterns =(
     url(r'^rate_of_change/(?P<station_id>[^/]+)/(?P<filters>.*)$', rate_of_change, name='rate_of_change'),
     url(r'^frequency_of_change/(?P<station_id>[^/]+)/(?P<filters>.*)$', frequency_of_change, name='frequency_of_change'),
     url(r'^julian_date/(?P<station_id>[^/]+)/(?P<filters>.*)$', julian_date, name='julian_date'),
-    url(r'^iha/(?P<station_id>[^/]+)/(?P<filters>.*)$', iha, name='iha'),
+    url(r'^iha/(?P<station_id>[^/]+)/(?P<other_id>[^/]+)/(?P<filters>.*)$', iha, name='iha'),
 )
