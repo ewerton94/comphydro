@@ -62,6 +62,10 @@ class StationInfo(object):
         gp = pd.Grouper(freq='D',sort=True)
         self.daily_data = pf.groupby(gp).mean()
         return self.daily_data
+    def create_graph(self,xys,variable,unit):
+        return plot_web(xys=xys,
+                                      title="%s"%(str(variable)),
+                                        variable=variable,unit=unit)
     def get_originals_graphs_and_temporals(self):
         self.update_originals()
         self.update_variables_and_sources()
@@ -70,9 +74,7 @@ class StationInfo(object):
             original.temporals = temporals
             daily_data=self.create_daily_data_pandas(temporals)
             self.xys=[[daily_data.index,daily_data['data'].values],]
-            original.graph = plot_web(xys=self.xys,
-                                      title="%s"%(str(original.variable)),
-                                        variable=original.variable,unit=original.unit)
+            original.graph = self.create_graph(self.xys,original.variable,original.unit)
             
             
             

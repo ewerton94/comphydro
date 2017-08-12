@@ -4,7 +4,7 @@ from datetime import datetime
 from abc import ABCMeta, abstractmethod
 from django.utils.translation import gettext as _
 from data.models import Discretization,Unit,Variable,ConsistencyLevel,OriginalSerie,TemporalSerie,Stats
-from data.views import plot_web
+from data.views import plot_web,plot_polar
 from stations.reads_data import get_id_temporal,criar_temporal
 from stations.models import Station
 from stations.utils import StationInfo
@@ -47,6 +47,7 @@ def get_available_variables(station):
     return [o.variable for o in OriginalSerie.objects.filter(station=station)]
 
 class BaseStats(StationInfo,metaclass=ABCMeta):
+    plot_daily=False
     def update_informations(self,discretization_code=None,reduction_id=None,stats_type='standard'):
         if discretization_code is None:
             self.discretizations=Discretization.objects.all()
@@ -110,12 +111,25 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
             x=[t.date for t in reduced.temporals]
             y=[t.data for t in reduced.temporals]
             xys.append([x,y])
+        names=[r.type for r in self.reductions]
+        if self.plot_daily:
+            xys.append([list(daily.index.to_datetime()),[d[0] for d in daily.values]])
+            print(daily.values)
+            names.append(_('daily_data'))
         graph.variable=original.variable
         graph.discretization=discretization
         graph.reduceds=reduceds
         graph.xys = xys
-        names=[r.type for r in self.reductions]
-        return graph
+        return graph,names
+    def create_graph(self,xys,variable,unit,discretization,names):
+        '''
+        This method is responsible to return the graph. To change the graph.
+        '''
+        return plot_web(xys=xys,title=_("%(discretization)s %(variable)s")%
+                                                {'variable':str(variable),
+                                                 'discretization':str(discretization)
+                                                 },
+                                            variable=variable,unit=unit,names=names)
     
     def get_or_create_reduced_series(self):
         self.update_originals()
@@ -125,17 +139,12 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
         for original in self.originals:
             temporals = TemporalSerie.objects.filter(id=original.temporal_serie_id)
             daily = self.create_daily_data_pandas(temporals)
+            
             anos_hidrologicos = self.hydrologic_years_dict(daily)
             discretizations=self.discretizations[:]
             for discretization in discretizations:
-                graph = self.get_graphs_data(daily,original,discretization)
-                names=[r.type for r in self.reductions]
-                graph.graph = plot_web(xys=graph.xys,
-                                          title=_("%(discretization)s %(variable)s")%
-                                                {'variable':str(original.variable),
-                                                 'discretization':str(discretization)
-                                                 },
-                                            variable=original.variable,unit=original.unit,names=names)
+                graph,names = self.get_graphs_data(daily,original,discretization)
+                graph.graph = self.create_graph(graph.xys,original.variable,original.unit,discretization,names)
                 graphs.append(graph)
         self.reduceds = graphs
         return self.reduceds
@@ -152,6 +161,7 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
         return TemporalSerie.objects.filter(id=id),reduced_serie
     
 class BasicStats(BaseStats):
+    plot_daily=True
     def reduce(self,daily,discretization,reduction):
         gp = pd.Grouper(freq=discretization.pandas_code)
         discretized = daily.groupby(gp).agg(funcoes_reducao[reduction.type_pt_br])
@@ -160,6 +170,7 @@ class BasicStats(BaseStats):
         return date,data
 
 class RollingMean(BaseStats):
+    plot_daily=True
     def reduce(self,daily,discretization,reduction):
         daily_rolling_mean = daily.rolling(window=int(discretization.pandas_code),center=False).mean()
         hydrologic_years = self.hydrologic_years_dict(daily_rolling_mean)
@@ -174,6 +185,7 @@ class RollingMean(BaseStats):
   
 
 class BaseAnnualEvents(BaseStats,metaclass=ABCMeta):
+    
     
     @abstractmethod
     def get_reduced_value(self,df,reduction):
@@ -193,12 +205,26 @@ class BaseAnnualEvents(BaseStats,metaclass=ABCMeta):
 
 class RateOfChange(BaseAnnualEvents):
     
+    def create_graph(self,xys,variable,unit,discretization,names):
+        return plot_web(xys=xys,title=_("%(discretization)s %(variable)s")%
+                                                {'variable':_('rate of change'),
+                                                 'discretization':str(discretization)
+                                                 },
+                                            variable=_('rate'),unit='m³/s/dia',names=names)
+    
     def get_reduced_value(self,df,reduction):
         df['dif'] = df['data'] - df['data'].shift(1)
         return df[eval("df['dif']"+funcoes_reducao[reduction.type_en_us]+'0')]['dif'].mean()
     
     
 class FrequencyOfChange(BaseAnnualEvents):
+    
+    def create_graph(self,xys,variable,unit,discretization,names):
+        return plot_web(xys=xys,title=_("%(discretization)s %(variable)s")%
+                                                {'variable':_('frequency of change'),
+                                                 'discretization':str(discretization)
+                                                 },
+                                            variable=_('frequency'),unit='un',names=names)
     
     def get_reduced_value(self,df,reduction):
         df['dif_unit'] = (df['data'] - df['data'].shift(1))/abs(df['data'] - df['data'].shift(1))
@@ -214,6 +240,7 @@ class FrequencyOfPulses(BaseAnnualEvents):
     
 class DurationOfPulses(BaseAnnualEvents):
     
+    
     def get_reduced_value(self,df,reduction):
         df['dif_unit'] = (df['data'] - df['data'].shift(1))/abs(df['data'] - df['data'].shift(1))
         events = split(df['dif_unit'], where(eval("df['dif_unit']"+funcoes_reducao[reduction.type_en_us]+"df['dif_unit'].shift(1)"))[0])
@@ -222,13 +249,27 @@ class DurationOfPulses(BaseAnnualEvents):
 
     
     
+class PartialEvent(BaseAnnualEvents):
+    def get_reduced_value(self, df, reduction):
+        limiar = df.quantile(quartilLimiar)
+        median = df.median()
+        eventoL = df[eval("df "+funcoes_reducao[reduction.type_en_us]+"= limiar]")]
+        eventoM = df[eval("df "+funcoes_reducao[reduction.type_en_us]+"= median]")]
+        
+    
 class JulianDate(BaseAnnualEvents):
+    def create_graph(self,xys,variable,unit,discretization,names):
+        return plot_polar(xys=xys,title=_("%(discretization)s %(variable)s")%
+                                                {'variable':_('Rate'),
+                                                 'discretization':str(discretization)
+                                                 },
+                                            variable=_('julian date'),unit='day',names=names)
     
     def get_reduced_value(self,df,reduction):
         reduction_abreviations = {'maximum':'max','minimum':'min'}
         date_maximum = pd.DatetimeIndex(eval('df.idx%s().values'%reduction_abreviations[reduction.type_en_us]))[0]
-        julian_seconds = date_maximum-datetime(date_maximum.year,1,1)
-        return julian_seconds.days
+        julian = date_maximum-datetime(date_maximum.year,1,1)
+        return julian.days
 
 
 

@@ -22,3 +22,20 @@ def plot_web(xys,title,variable,unit,names=[]):
 
 def home(request):
     return render(request,'home.html',{})
+
+
+
+def plot_polar(xys,title,variable,unit,names=[]):
+    data=[Scatter(t=xy[1], r=[d.year-1900 for d in xy[0]],mode='markers',marker=dict(opacity=0.7)) for xy in xys]
+    if names:
+        for i in range(len(data)):
+            data[i].name=names[i]
+    return plot({
+                    'data':data,
+                    'layout':Layout(title=title,xaxis={'title':_('time')},)
+
+                },auto_open=False, output_type='div')
+    #layout=go.Layout(title='Maximos e minimos',orientation=-90)
+    #fig=go.Figure(data=data,layout=layout)
+    #div=plot(fig,auto_open=False, output_type='div')
+    #return div
