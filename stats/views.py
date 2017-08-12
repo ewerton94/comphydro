@@ -6,6 +6,7 @@ from django.shortcuts import render
 from data.views import plot_web
 from stations.utils import StationInfo,get_stats_list
 from stations.models import Station, Source, StationType, Localization,Coordinate
+from data.models import Variable
 
 from .models import Reduction,ReducedSerie,RollingMeanSerie
 from .stats import BasicStats,RollingMean,RateOfChange,FrequencyOfChange,IHA,JulianDate
@@ -70,7 +71,8 @@ def julian_date(request,**kwargs):
 
 def iha(request,**kwargs):
     filters = furl("?"+kwargs['filters']).args
-    g = IHA(kwargs['station_id'],kwargs['other_id'],filters.get('variable',1))
+    flow = Variable.objects.get(variable_en_us="flow")
+    g = IHA(kwargs['station_id'],kwargs['other_id'],filters.get('variable',flow.id))
     group1=g.Group1()
     group2=g.Group2()
     group3=g.Group3()
