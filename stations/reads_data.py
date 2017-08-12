@@ -20,7 +20,7 @@ from .models import Station, Source, StationType, Localization,Coordinate
 
 Series = [OriginalSerie,]
           
-          
+cl={1:'raw',2:'consisted'}      
           
 def mes_em_numero(string):
     """CRIA O DATAFRAME DATAS - VAZÕES"""
@@ -65,11 +65,11 @@ def cria_serie_original(dados,datas,posto,variable,nivel_consistencia):
     print("Criando Série Original para a temporal de ID: "+str(id))
     o = OriginalSerie.objects.create(
             station = posto,
-            discretization = Discretization.objects.get(id=1),
+            discretization = Discretization.objects.get(type_en_us= 'daily'),
             variable = variable,
             temporal_serie_id = id,
             unit=Unit.objects.get(unit="m³/s"),
-            consistency_level = ConsistencyLevel.objects.get(id=nivel_consistencia)
+            consistency_level = ConsistencyLevel.objects.get(type_en_us=nivel_consistencia)
     )
     o.save()
     return o
@@ -81,7 +81,7 @@ class Base(metaclass=ABCMeta):
         pass
     
     @abstractmethod
-    def obtem_nome_posto(self,estacao):
+    def obtem_nome_e_localizacao_posto(self,estacao):
         pass
     
     @abstractmethod
@@ -134,14 +134,14 @@ class Chesf(Base):
         #CRIANDO DATAFRAME - DATAS COMO INDICE DAS VAZÕES
         df = pd.DataFrame({"Vazão":list(dado)},index = pd.DatetimeIndex(data))
         return df
-    def obtem_nome_posto(self,estacao):
-        return "Xingó",False
+    def obtem_nome_e_localizacao_posto(self,estacao):
+        return "Xingó",Localization.objects.latest('id'),False
     def executar(self,posto,variavel):
         if variavel.variable_en_us != "flow":
             return _("There is no data from '%s' variable in this station.")%str(variavel)
         print ('** %s **' % (posto.code, )) 
         df = self.le_dados('Temp_dir')
-        cria_serie_original(df.values,df.index,posto,variavel,1)
+        cria_serie_original(df.values,df.index,posto,variavel,cl[1])
         print ('** %s ** (concluído)' % (posto.code,))
 
 
@@ -159,14 +159,16 @@ class ONS(Base):
         #CRIANDO DATAFRAME - DATAS COMO INDICE DAS VAZÕES
         df = pd.DataFrame({"Vazão":list(vazao)},index = data)
         return df
-    def obtem_nome_posto(self,estacao):
-        return "Xingó",False
+    def obtem_nome_e_localizacao_posto(self,estacao):
+        l = Localization.objects.latest('id')
+        print(l)
+        return "Xingó",l,False
     def executar(self,posto,variavel):
         if variavel.variable_en_us != "flow":
             return _("There is no data from '%s' variable in this station.")%str(variavel)
         print ('** %s **' % (posto.code, )) 
         df = self.le_dados('Temp_dir')
-        cria_serie_original(df.values,df.index,posto,variavel,1)
+        cria_serie_original(df.values,df.index,posto,variavel,cl[1])
         print ('** %s ** (concluído)' % (posto.code,))
 
 class ANA(Base):
@@ -246,14 +248,14 @@ class ANA(Base):
         except:
             return 1,True
             
-    def obtem_nome_posto(self,estacao):
+    def obtem_nome_e_localizacao_posto(self,estacao):
         response = requests.get(self.montar_url_estacao(estacao))
         soup = BeautifulSoup(response.content, "lxml")
         try:
             menu = {t.text:t.find_next_sibling("td").text for t in soup.findAll("td",{'class':'gridCampo'})}
             return menu['Nome'],False
         except:
-            return soup.findAll("p",{'class':'aviso'}),True
+            return soup.findAll("p",{'class':'aviso'}),Localization.objects.latest('id'),True
         
 
     def executar(self,posto,variavel=None):

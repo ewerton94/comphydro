@@ -19,13 +19,15 @@ funcoes_reducao = {'máxima':max,'mínima':min,'soma':sum, 'média':mean,'máxim
                    'mínima média móvel':argmin,'fall rate':'<','rise rate':'>','fall count':'<','rise count':'>'}
 meses = {1:"JAN",2:"FEB",3:"MAR",4:"APR",5:"MAY",6:"JUN",7:"JUL",8:"AUG",9:"SEP",10:"OCT",11:"NOV",12:"DEC"}
 
+reduction_abreviations = {'maximum':'max','minimum':'min'}
+
 
 def get_originals(variables,originals):
     os=[]
     for variable in variables:
         originals_by_variable=[o for o in originals if o.variable==variable]
-        id_data_type = 2 if 2 in [o.consistency_level.id for o in originals_by_variable] else 1
-        os.append([o for o in originals_by_variable if o.consistency_level.id == id_data_type][0])
+        cl_data_type = 'consisted' if 'consisted' in [o.consistency_level.type_en_us for o in originals_by_variable] else 'raw'
+        os.append([o for o in originals_by_variable if o.consistency_level.type_en_us == cl_data_type][0])
     return os
 
 
@@ -165,6 +167,9 @@ class BasicStats(BaseStats):
     def reduce(self,daily,discretization,reduction):
         gp = pd.Grouper(freq=discretization.pandas_code)
         discretized = daily.groupby(gp).agg(funcoes_reducao[reduction.type_pt_br])
+        discretized.index = pd.DatetimeIndex(
+            [d[0] for d in eval("daily.groupby(gp).idx%s().values"%reduction_abreviations[reduction.type_en_us])]
+        )
         date = list(discretized.index)
         data = list(discretized["data"])
         return date,data
@@ -266,7 +271,7 @@ class JulianDate(BaseAnnualEvents):
                                             variable=_('julian date'),unit='day',names=names)
     
     def get_reduced_value(self,df,reduction):
-        reduction_abreviations = {'maximum':'max','minimum':'min'}
+        
         date_maximum = pd.DatetimeIndex(eval('df.idx%s().values'%reduction_abreviations[reduction.type_en_us]))[0]
         julian = date_maximum-datetime(date_maximum.year,1,1)
         return julian.days

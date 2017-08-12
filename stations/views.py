@@ -32,7 +32,6 @@ def create_station(request):
             source = Source.objects.get(id=data["source"])
             code = data["ana_code"]
             print("code")
-            localization = Localization.objects.get(id=1)
             postos = Station.objects.filter(code=code)
             if postos:
                 messages.add_message(request, messages.ERROR, _('The station of code: %s already exists into the database.')%postos[0].code)
@@ -40,7 +39,7 @@ def create_station(request):
             print('Solicitando Hidroweb')
             hid = eval(source.source)()
             print(source.source)
-            name,erro = hid.obtem_nome_posto(code)
+            name,localization,erro = hid.obtem_nome_e_localizacao_posto(code)
             if erro:
                 messages.add_message(request, messages.ERROR, '%s'%name)
                 return render(request,'create_station.html',{'aba':'map','form':form})
@@ -63,16 +62,20 @@ def stations(request):
     lat=[]
     lon=[]
     text=[]
-    for station in Station.objects.all():
-        text.append('<a href="/stations/%d/information">%s</a>'%(station.id,station))
-        lat.append(station.localization.coordinates.y)
-        lon.append(station.localization.coordinates.x)
-    data=Data([Scattermapbox(lat=lat,lon=lon,mode='markers',marker=Marker(size=14,color='rgb(0, 50, 40)'),text=text,)])
-    layout=Layout(autosize=True,margin=Margin(l=0,r=0,b=0,t=0,pad=0),hovermode='closest',mapbox=dict(accesstoken=mpt,bearing=0,center=dict(lat=float(lat[0]),lon=float(lon[0])),pitch=0,zoom=7,),)
-    fig=dict(data=data,layout=layout)
-    
-    div=plot(fig, auto_open=False, output_type='div')
-    context={'BASE_URL':"",'stations':stations,'graph':div}
+    stations_ = Station.objects.all()
+    context={'BASE_URL':"",'stations':stations}
+    if stations_:
+        for station in stations_:
+            text.append('<a href="/%s/stations/%d/information">%s</a>'%(get_language(),station.id,station))
+            lat.append(station.localization.coordinates.y)
+            lon.append(station.localization.coordinates.x)
+
+        data=Data([Scattermapbox(lat=lat,lon=lon,mode='markers',marker=Marker(size=14,color='rgb(0, 50, 40)'),text=text,)])
+        layout=Layout(autosize=True,margin=Margin(l=0,r=0,b=0,t=0,pad=0),hovermode='closest',mapbox=dict(accesstoken=mpt,bearing=0,center=dict(lat=float(lat[0]),lon=float(lon[0])),pitch=0,zoom=7,),)
+        fig=dict(data=data,layout=layout)
+
+        div=plot(fig, auto_open=False, output_type='div')
+        context['graph'] = div
     
     return render(request,'stations.html',context)          
  
