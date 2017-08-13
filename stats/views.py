@@ -120,7 +120,7 @@ def iha(request,**kwargs):
             
            )
     group1=g.Group1()
-    group2=g.Group2()
+    group2,graphs2=g.Group2()
     group3=g.Group3()
     group4=g.Group4()
     group5=g.Group5()
@@ -134,5 +134,6 @@ def iha(request,**kwargs):
                                            'group3':group3,
                                            'group4':group4,
                                            'group5':group5,
+                                      'graphs':graphs2,
                                                          })
     

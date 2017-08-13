@@ -319,7 +319,9 @@ class IHA:
                      }
         
     def Group1(self):
-        month_names=['January','February','March','April','May','June','July','August','September','October','November','December']
+        month_names=[_('January'),_('February'),_('March'),_('April'),
+                     _('May'),_('June'),_('July'),'August','September',
+                     _('October'),'November','December']
         data={}
         for type_data in self.daily:
             daily_data = self.daily[type_data]
@@ -333,15 +335,32 @@ class IHA:
         datas=[]
         discretizations = list(Discretization.objects.filter(stats_type__type = 'rolling mean'))
         discretizations.sort(key=lambda x:int(x.pandas_code))
+        graphs=[]
         for discretization in discretizations:
             for reduction in Reduction.objects.filter(stats_type__type = 'rolling mean'):
                 data_mean = {}
+                xys=[]
+                names=[]
+                
                 for type_data in self.daily:
                     daily_data = self.daily[type_data]
                     basic_stats = RollingMean(self.station.id,self.variable.id)
                     date,data = basic_stats.reduce(daily_data,discretization,reduction)
-                    data_mean[type_data]=round(sum(data)/len(data),2)
+                    mean_=round(sum(data)/len(data),2)
+                    xys.append([date,data])
+                    names.append(type_data)
+                    xys.append([[date[0],date[-1]],[mean_,mean_]])
+                    names.append(type_data+" "+_("mean"))
+                    data_mean[type_data]=mean_
                     
+                graph=plot_web(xys=xys,title=_("%(discretization)s %(variable)s %(reduction)s")%
+                                                {'variable':str(self.variable),
+                                                 'discretization':str(discretization),
+                                                 'reduction':str(reduction.type)
+                                                 },
+                                            variable=self.variable,unit="m³/s",names= names)
+                
+                graphs.append(graph)
                 line = Table('Annual %(reduction)s %(discretization)s means' % 
                              {'reduction':reduction.type,
                               'discretization':discretization.type},
@@ -349,7 +368,7 @@ class IHA:
                              data_mean['pos_data'],
                 )
                 datas.append(line)
-        return datas
+        return datas,graphs
     
     def Group3(self):
         datas=[]

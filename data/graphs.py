@@ -9,12 +9,23 @@ from django.utils.translation import gettext as _
 
 def plot_web(xys,title,variable,unit,names=[]):
     data=[Scatter(x=xy[0], y=xy[1]) for xy in xys]
+    shapes = []
     if names:
         for i in range(len(data)):
             data[i].name=names[i]
+            if names[i].endswith(" mean"):
+                shapes.append({
+                'type': 'line',
+                'line': {
+                    'color': 'rgb(55, 128, 191)',
+                    'width': 3,
+                }})
+            else:
+                shapes.append({})
     return plot({
                     'data':data,
-                    'layout':Layout(title=title,xaxis={'title':_('time')},yaxis={'title':"%s (%s)"
+        
+                    'layout':Layout(title=title,shapes=shapes,xaxis={'title':_('time')},yaxis={'title':"%s (%s)"
                                                                                       %(str(variable),
                                                                                         str(unit))})
 
