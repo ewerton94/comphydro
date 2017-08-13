@@ -37,13 +37,13 @@ def home(request):
 
 
 def plot_polar(xys,title,variable,unit,names=[]):
-    data=[Scatter(t=xy[1], r=[d.year-1900 for d in xy[0]],mode='markers',marker=dict(opacity=0.7)) for xy in xys]
+    data=[Scatter(t=[d.strftime("%Y") for d in xy[0]], r=xy[1],mode='lines+markers',marker=dict(opacity=0.7)) for xy in xys]
     if names:
         for i in range(len(data)):
             data[i].name=names[i]
     return plot({
                     'data':data,
-                    'layout':Layout(title=title,xaxis={'title':_('time')},)
+                    'layout':Layout(title=title,orientation=-90,xaxis={'title':_('time')},)
 
                 },auto_open=False, output_type='div')
     #layout=go.Layout(title='Maximos e minimos',orientation=-90)
