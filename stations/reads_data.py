@@ -253,7 +253,17 @@ class ANA(Base):
         soup = BeautifulSoup(response.content, "lxml")
         try:
             menu = {t.text:t.find_next_sibling("td").text for t in soup.findAll("td",{'class':'gridCampo'})}
-            return menu['Nome'],False
+            latitude = menu['Latitude'].split(":")
+            lat_unit=int(latitude[0])/abs(int(latitude[0]))
+            latitude = int(latitude[0])+lat_unit*int(latitude[1])/60+lat_unit*int(latitude[0])/3600
+            longitude = menu['Longitude'].split(":")
+            long_unit=int(longitude[0])/abs(int(longitude[0]))
+            longitude = int(longitude[0])/abs(int(longitude[0]))+long_unit*int(longitude[1])/60+long_unit*int(longitude[0])/3600
+            c=Coordinate.objects.create(x=longitude,y=latitude)
+            c.save()
+            l = Localization.objects.create(coordinates=c)
+            l.save()
+            return menu['Nome'],l,False
         except:
             return soup.findAll("p",{'class':'aviso'}),Localization.objects.latest('id'),True
         
@@ -264,14 +274,14 @@ class ANA(Base):
         self.estacao = posto.code
         post_data={'cboTipoReg': variavel.ana_code}
         print ('** %s **' % (posto.code, ))
-        r = requests.post(self.montar_url_estacao(posto.code), data=post_data)
+        r = requests.post(self.montar_url_estacao(posto.code), data=post_data, timeout=None)
         link,erro = self.obter_link_arquivo(r)
         if erro:
             return _("There is no data from '%s' variable in this station.")%str(variavel)
         temp_dir = self.salvar_arquivo_texto(posto.code, link)
         series = self.le_dados(temp_dir)
         for i in series:
-            cria_serie_original(series[i].values,series[i].index,posto,variavel,i)
+            cria_serie_original(series[i].values,series[i].index,posto,variavel,cl[i])
         print ('** %s ** (concluído)' % (self.estacao,))
             
             

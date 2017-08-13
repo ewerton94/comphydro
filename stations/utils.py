@@ -8,7 +8,7 @@ from django.shortcuts import render, get_object_or_404
 from django.utils.translation import get_language,gettext as _
 
 from data.models import Discretization,Unit,Variable,ConsistencyLevel,OriginalSerie,TemporalSerie
-from data.views import plot_web
+from data.graphs import plot_web
 from stats.forms import RollingMeanForm,BasicStatsForm,RateFrequencyOfChangeForm
 #from stats.stats import Stats
 

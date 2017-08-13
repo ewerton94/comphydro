@@ -4,7 +4,7 @@ from datetime import datetime
 from abc import ABCMeta, abstractmethod
 from django.utils.translation import gettext as _
 from data.models import Discretization,Unit,Variable,ConsistencyLevel,OriginalSerie,TemporalSerie,Stats
-from data.views import plot_web,plot_polar
+from data.graphs import plot_web,plot_polar
 from stations.reads_data import get_id_temporal,criar_temporal
 from stations.models import Station
 from stations.utils import StationInfo
@@ -52,8 +52,11 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
     plot_daily=False
     def update_informations(self,discretization_code=None,reduction_id=None,stats_type='standard'):
         if discretization_code is None:
-            self.discretizations=Discretization.objects.all()
-            self.discretizations=[d for d in self.discretizations if d.stats_type.type==stats_type]
+            discretizations=Discretization.objects.all()
+            discretizations=[d for d in discretizations if d.stats_type.type==stats_type]
+            if not discretizations:
+                discretizations = Discretization.objects.filter(type_en_us='annual')
+            self.discretizations=discretizations
         else:
             self.discretizations = Discretization.objects.filter(pandas_code=discretization_code)
         if reduction_id==None:
@@ -72,8 +75,12 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
         years_minimum = df.groupby(pd.Grouper(freq='AS')).idxmin()
         return pd.value_counts([d.month for d in years_minimum["data"]]).idxmax()
     
-    def hydrologic_years_dict(self,df):
+    def hydrologic_years_dict(self,df,hydrologic_year_type="flood"):
         n_month = self.starting_month_hydrologic_year(df)
+        if hydrologic_year_type != 'flood':
+            n_month += 6
+            if n_month >12:
+                n_month-=12
         gp = df["data"].groupby(pd.Grouper(freq="AS-%s"%meses[n_month]))
         dic = dict(list(gp))
         annual_dic={key:dic[key] for key in dic.keys()}
@@ -116,12 +123,12 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
         names=[r.type for r in self.reductions]
         if self.plot_daily:
             xys.append([list(daily.index.to_datetime()),[d[0] for d in daily.values]])
-            print(daily.values)
             names.append(_('daily_data'))
         graph.variable=original.variable
         graph.discretization=discretization
         graph.reduceds=reduceds
         graph.xys = xys
+        graph.names=names
         return graph,names
     def create_graph(self,xys,variable,unit,discretization,names):
         '''
@@ -141,7 +148,6 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
         for original in self.originals:
             temporals = TemporalSerie.objects.filter(id=original.temporal_serie_id)
             daily = self.create_daily_data_pandas(temporals)
-            
             anos_hidrologicos = self.hydrologic_years_dict(daily)
             discretizations=self.discretizations[:]
             for discretization in discretizations:
@@ -178,12 +184,12 @@ class RollingMean(BaseStats):
     plot_daily=True
     def reduce(self,daily,discretization,reduction):
         daily_rolling_mean = daily.rolling(window=int(discretization.pandas_code),center=False).mean()
-        hydrologic_years = self.hydrologic_years_dict(daily_rolling_mean)
+        hydrologic_years = self.hydrologic_years_dict(daily_rolling_mean,reduction.hydrologic_year_type)
         gp = pd.Grouper(freq="10AS")
         years = sorted(list(hydrologic_years.keys())[1:])
         data = [hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]).max()
                  for year in years if not hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]) is (nan)]
-        date = [hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]).idxmax()
+        date = [pd.to_datetime(eval("hydrologic_years[year].groupby(gp).idx%s().values"%reduction_abreviations[reduction.type_en_us])[0])
                  for year in years  if not hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]) is (nan)]
         return date,data
     
@@ -197,7 +203,7 @@ class BaseAnnualEvents(BaseStats,metaclass=ABCMeta):
         pass
     
     def reduce(self,daily,discretization,reduction):
-        hydrologic_years = self.hydrologic_years_dict(daily)
+        hydrologic_years = self.hydrologic_years_dict(daily,reduction.hydrologic_year_type)
         years = sorted(list(hydrologic_years.keys())[1:])
         data = []
         for year in years:
@@ -219,7 +225,8 @@ class RateOfChange(BaseAnnualEvents):
     
     def get_reduced_value(self,df,reduction):
         df['dif'] = df['data'] - df['data'].shift(1)
-        return df[eval("df['dif']"+funcoes_reducao[reduction.type_en_us]+'0')]['dif'].mean()
+        values = df[eval("df['dif']"+funcoes_reducao[reduction.type_en_us]+'0')]['dif']
+        return values.mean() 
     
     
 class FrequencyOfChange(BaseAnnualEvents):
@@ -291,12 +298,24 @@ def get_daily_data(station,variable):
     return df.groupby(gp).mean()
     
 class IHA:
-    def __init__(self,station_id,other_id,variable_id=1):
+    def __init__(self,station_id,other_id,variable=None,start_year=None,end_year=None):
         self.station = Station.objects.get(id=station_id)
         self.other = Station.objects.get(id=other_id)
-        self.variable = Variable.objects.get(id=variable_id)    
-        self.daily = {'pre_data':get_daily_data(self.station,self.variable),
-                      'pos_data':get_daily_data(self.other,self.variable)
+        if variable==None:
+            self.variable = Variable.objects.get(variable_en_us="flow")
+        else:
+            self.variable = Variable.objects.get(id=variable)
+        pre=get_daily_data(self.station,self.variable)
+        pos=get_daily_data(self.other,self.variable)
+        if start_year is None and end_year is None:
+            pre=pre[pre.index.year>=1995]
+            pre=pre[pre.index.year<=2012]
+            pos=pos[pos.index.year>=1995]
+            pos=pos[pos.index.year<=2012]
+            
+            
+        self.daily = {'pre_data':pre,
+                      'pos_data':pos
                      }
         
     def Group1(self):

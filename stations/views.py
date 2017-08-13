@@ -8,7 +8,7 @@ from django.shortcuts import render, get_object_or_404
 from django.utils.translation import get_language,gettext as _
 
 from data.models import Discretization,Unit,Variable,ConsistencyLevel,OriginalSerie,TemporalSerie
-from data.views import plot_web
+from data.graphs import plot_web
 from stats.forms import RollingMeanForm,BasicStatsForm,RateFrequencyOfChangeForm,IHAForm
 from .utils import Stats
 
@@ -46,7 +46,7 @@ def create_station(request):
             station = Station.objects.create(station_type=station_type,source=source,code=code,name=name, localization=localization)
             station.save()
 
-            for codigo_variavel in range(8,10):
+            for codigo_variavel in range(9,10):
                 variavel = Variable.objects.get(ana_code=codigo_variavel)
                 executa = hid.executar(station,variavel)
                 if executa:
