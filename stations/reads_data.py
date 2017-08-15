@@ -135,7 +135,16 @@ class Chesf(Base):
         df = pd.DataFrame({"Vazão":list(dado)},index = pd.DatetimeIndex(data))
         return df
     def obtem_nome_e_localizacao_posto(self,estacao):
-        return "Xingó",Localization.objects.latest('id'),False
+        localization=Localization.objects.all()
+        if localization:
+            l = Localization.objects.latest('id')
+        else:
+            c=Coordinate.objects.create(x=-35,y=-9)
+            c.save()
+            l = Localization.objects.create(coordinates=c)
+            l.save()
+        print(l)
+        return "Xingó",l,False
     def executar(self,posto,variavel):
         if variavel.variable_en_us != "flow":
             return _("There is no data from '%s' variable in this station.")%str(variavel)
@@ -160,7 +169,14 @@ class ONS(Base):
         df = pd.DataFrame({"Vazão":list(vazao)},index = data)
         return df
     def obtem_nome_e_localizacao_posto(self,estacao):
-        l = Localization.objects.latest('id')
+        localization=Localization.objects.all()
+        if localization:
+            l = Localization.objects.latest('id')
+        else:
+            c=Coordinate.objects.create(x=-35,y=-9)
+            c.save()
+            l = Localization.objects.create(coordinates=c)
+            l.save()
         print(l)
         return "Xingó",l,False
     def executar(self,posto,variavel):
@@ -241,6 +257,7 @@ class ANA(Base):
                 definicao_de_duplicatas=serie_completa.reset_index(level=1, drop=True).index.duplicated(keep='last')
                 serie_completa_por_niv[i]=serie_completa[~definicao_de_duplicatas]
         return serie_completa_por_niv
+    
     def obter_link_arquivo(self, response):
         soup = BeautifulSoup(response.content, "lxml")
         try:

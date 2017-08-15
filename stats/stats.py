@@ -1,5 +1,5 @@
 import pandas as pd
-from numpy import nan,mean,argmax,argmin,where,split
+from numpy import nan,mean,argmax,argmin,where,split,std
 from datetime import datetime
 from abc import ABCMeta, abstractmethod
 from django.utils.translation import gettext as _
@@ -9,14 +9,10 @@ from stations.reads_data import get_id_temporal,criar_temporal
 from stations.models import Station
 from stations.utils import StationInfo
 from .models import Reduction,ReducedSerie,RollingMeanSerie
-
-
-
-        
-
         
 funcoes_reducao = {'máxima':max,'mínima':min,'soma':sum, 'média':mean,'máxima média móvel':argmax,
-                   'mínima média móvel':argmin,'fall rate':'>','rise rate':'<','fall count':'>','rise count':'<'}
+                   'mínima média móvel':argmin,'fall rate':'>','rise rate':'<','fall count':'>','rise count':'<',
+                    'low count':'<','high count':'>','low duration':'<','high duration':'>'}
 meses = {1:"JAN",2:"FEB",3:"MAR",4:"APR",5:"MAY",6:"JUN",7:"JUL",8:"AUG",9:"SEP",10:"OCT",11:"NOV",12:"DEC"}
 
 reduction_abreviations = {'maximum':'max','minimum':'min'}
@@ -36,7 +32,7 @@ class Table:
         self.title=title
         self.pre_data=pre_data
         self.pos_data=pos_data
-        self.deviation_magnitude = pre_data-pos_data
+        self.deviation_magnitude = pos_data-pre_data
         self.percent = int(self.deviation_magnitude/pre_data*100)
         
     def __str__(self):
@@ -193,11 +189,24 @@ class RollingMean(BaseStats):
                  for year in years  if not hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]) is (nan)]
         return date,data
     
+class ReferenceFlow(BaseStats):
+    def reduce(self,daily,discretization,reduction):
+        q50=daily.quantile(q=0.5, numeric_only=True)
+        q90=daily.quantile(q=0.1, numeric_only=True)
+        qbase=q90/q50
+        print('Base Flow')
+        print(qbase)
+        daily['month']=[o.month for o in daily.index]
+        mean_by_month = daily.groupby('month').quantile(q=0.05, numeric_only=True)
+        data = [d[0] for d in mean_by_month.values]
+        date = [datetime(1900,m,1) for m in set(daily['month'].values)]
+        return date,data
+    
   
 
 class BaseAnnualEvents(BaseStats,metaclass=ABCMeta):
     
-    
+    calculate_limiar=False
     @abstractmethod
     def get_reduced_value(self,df,reduction):
         pass
@@ -206,6 +215,9 @@ class BaseAnnualEvents(BaseStats,metaclass=ABCMeta):
         hydrologic_years = self.hydrologic_years_dict(daily,reduction.hydrologic_year_type)
         years = sorted(list(hydrologic_years.keys())[1:])
         data = []
+        if self.calculate_limiar:
+            self.median = daily.median().values[0]
+            self.limiar = daily.quantile(quantils[reduction.hydrologic_year_type]).values[0]
         for year in years:
             df = hydrologic_years[year]
             df=pd.DataFrame({'data':df.values},index=df.index)
@@ -243,30 +255,49 @@ class FrequencyOfChange(BaseAnnualEvents):
         events = split(df['dif_unit'], where(eval("df['dif_unit']"+funcoes_reducao[reduction.type_en_us]+"df['dif_unit'].shift(1)"))[0])
         return len(events)
     
-class FrequencyOfPulses(BaseAnnualEvents):
-    
-    def get_reduced_value(self,df,reduction):
-        df['dif_unit'] = (df['data'] - df['data'].shift(1))/abs(df['data'] - df['data'].shift(1))
-        events = split(df['dif_unit'], where(eval("df['dif_unit']"+funcoes_reducao[reduction.type_en_us]+"df['dif_unit'].shift(1)"))[0])
-        return len(events)
-    
-class DurationOfPulses(BaseAnnualEvents):
-    
-    
-    def get_reduced_value(self,df,reduction):
-        df['dif_unit'] = (df['data'] - df['data'].shift(1))/abs(df['data'] - df['data'].shift(1))
-        events = split(df['dif_unit'], where(eval("df['dif_unit']"+funcoes_reducao[reduction.type_en_us]+"df['dif_unit'].shift(1)"))[0])
-        return len(events)
-    
 
+quantils = {'flood':0.75,'drought':0.25}
     
-    
-class PartialEvent(BaseAnnualEvents):
+class PulseCount(BaseAnnualEvents):
+    calculate_limiar=True
+    def get_reduced_value(self, df, reduction):        
+        limiar=self.limiar
+        m = self.median
+        df['num'] = [i for i in range(len(df))]
+        eventoM = df[eval("df['data'] "+funcoes_reducao[reduction.type_en_us]+"= m")]
+        print(eventoM.groupby(pd.Grouper(freq="D")).max())
+        print(limiar)
+        eventoM=eventoM.dropna()
+        eventoM['dif'] = eventoM['num'] - eventoM['num'].shift(1)
+        events = split(eventoM['data'], where(eventoM['dif']>1)[0])
+        eventsL=[]
+        for event in events:
+            eL=event[eval("event "+funcoes_reducao[reduction.type_en_us]+"= limiar")].dropna()
+            index = list(eL.index)
+            if index:
+                eventsL.append({'initial_date':index[0],'final_date':index[-1],'data':eL.values})
+        return len(eventsL)
+        
+class PulseDuration(BaseAnnualEvents):
+    calculate_limiar=True
     def get_reduced_value(self, df, reduction):
-        limiar = df.quantile(quartilLimiar)
-        median = df.median()
-        eventoL = df[eval("df "+funcoes_reducao[reduction.type_en_us]+"= limiar]")]
-        eventoM = df[eval("df "+funcoes_reducao[reduction.type_en_us]+"= median]")]
+        limiar=self.limiar
+        m = self.median
+        df['num'] = [i for i in range(len(df))]
+        eventoM = df[eval("df['data'] "+funcoes_reducao[reduction.type_en_us]+"= m")].dropna()
+        eventoM['dif'] = eventoM['num'] - eventoM['num'].shift(1)
+        events = split(eventoM['data'], where(eventoM['dif']>1)[0])
+        eventsL=[]
+        for event in events:
+            eL=event[eval("event "+funcoes_reducao[reduction.type_en_us]+"= limiar")].dropna()
+            index = list(eL.index)
+            if index:
+                eventsL.append({'initial_date':index[0],'final_date':index[-1],'data':eL.values})
+        difs=[(e['final_date']-e['initial_date']) for e in eventsL]
+        difs=[e.days for e in difs]
+        if difs:
+            return sum(difs)/len(difs)
+        return 0
         
     
 class JulianDate(BaseAnnualEvents):
@@ -327,9 +358,29 @@ class IHA:
             daily_data = self.daily[type_data]
             daily_data['month']=[o.month for o in daily_data.index]
             mean_by_month = daily_data.groupby('month').mean()
-            months = [d for d in mean_by_month.index]
             data[type_data] = [round(d[0],2) for d in mean_by_month.values]
         return [Table(month_names[i],data['pre_data'][i],data['pos_data'][i]) for i in range(12)]
+    def ReferenceFlow(self):
+        month_names=[_('January'),_('February'),_('March'),_('April'),
+                     _('May'),_('June'),_('July'),'August','September',
+                     _('October'),'November','December']
+        data={}
+        xys=[]
+        names=[]
+        for type_data in self.daily:
+            daily=self.daily[type_data]
+            daily['month']=[o.month for o in daily.index]
+            mean_by_month = daily.groupby('month').quantile(q=0.05, numeric_only=True)
+            data[type_data] = [d[0] for d in mean_by_month.values]
+            date = pd.DatetimeIndex([datetime(1900,m,1) for m in set(daily['month'].values)])
+            xys.append([date,data[type_data]])
+            names.append(type_data)
+
+        graph=plot_web(xys=xys,title=_("Reference Flow"),
+                                    variable="Flow",unit="m³/s",names=names)
+
+        return [Table(month_names[i],data['pre_data'][i],data['pos_data'][i]) for i in range(12)],graph
+            
     
     def Group2(self):
         datas=[]
@@ -391,7 +442,27 @@ class IHA:
             
     
     def Group4(self):
-        pass
+        datas=[]
+        classes={'pulse count':PulseCount,'pulse duration':PulseDuration}
+        for type_classe in classes:
+            for reduction in Reduction.objects.filter(stats_type__type = type_classe):
+                data_mean = {}
+                discretization = Discretization.objects.get(type_en_us="annual")
+                for type_data in self.daily:
+                    daily_data = self.daily[type_data]
+                    julian = classes[type_classe](self.station.id,self.variable.id)
+                    date,data = julian.reduce(daily_data,discretization,reduction)
+                    mean_=sum(data)/len(data)
+                    data_mean[type_data]=round(mean_,2)
+                line = Table('%(reduction)s' % 
+                                 {'reduction':reduction.type,
+                                  'discretization':discretization.type},
+                                 data_mean['pre_data'],
+                                 data_mean['pos_data'],
+                )
+                datas.append(line)
+                
+        return datas
                 
     def Group5(self):
         datas=[]
@@ -404,7 +475,137 @@ class IHA:
                     daily_data = self.daily[type_data]
                     julian = classes[type_classe](self.station.id,self.variable.id)
                     date,data = julian.reduce(daily_data,discretization,reduction)
-                    data_mean[type_data]=round(sum(data)/len(data),2)
+                    mean_=sum(data)/len(data)
+                    data_mean[type_data]=round(mean_,2)
+                line = Table('%(reduction)s' % 
+                                 {'reduction':reduction.type,
+                                  'discretization':discretization.type},
+                                 data_mean['pre_data'],
+                                 data_mean['pos_data'],
+                )
+                datas.append(line)
+                
+        return datas
+        
+    def Group1cv(self):
+        month_names=[_('January'),_('February'),_('March'),_('April'),
+                     _('May'),_('June'),_('July'),'August','September',
+                     _('October'),'November','December']
+        data={}
+        for type_data in self.daily:
+            daily_data = self.daily[type_data]
+            daily_data['month']=[o.month for o in daily_data.index]
+            mean_by_month = daily_data.groupby('month').mean()
+            std_by_month = daily_data.groupby('month').std()
+            cv_by_month = std_by_month/mean_by_month
+            months = [d for d in cv_by_month.index]
+            data[type_data] = [round(d[0],2) for d in cv_by_month.values]
+        return [Table(month_names[i],data['pre_data'][i],data['pos_data'][i]) for i in range(12)]
+    
+    def Group2cv(self):
+        datas=[]
+        discretizations = list(Discretization.objects.filter(stats_type__type = 'rolling mean'))
+        discretizations.sort(key=lambda x:int(x.pandas_code))
+        graphs=[]
+        for discretization in discretizations:
+            for reduction in Reduction.objects.filter(stats_type__type = 'rolling mean'):
+                data_mean = {}
+                xys=[]
+                names=[]
+                
+                for type_data in self.daily:
+                    daily_data = self.daily[type_data]
+                    basic_stats = RollingMean(self.station.id,self.variable.id)
+                    date,data = basic_stats.reduce(daily_data,discretization,reduction)
+                    mean_=sum(data)/len(data)
+                    std_ = std(data)
+                    cv = std_/mean_
+                    data_mean[type_data]=round(cv,2)
+                    xys.append([date,data])
+                    names.append(type_data)
+                    xys.append([[date[0],date[-1]],[mean_,mean_]])
+                    names.append(type_data+" "+_("mean"))
+                    
+                graph=plot_web(xys=xys,title=_("%(discretization)s %(variable)s %(reduction)s")%
+                                                {'variable':str(self.variable),
+                                                 'discretization':str(discretization),
+                                                 'reduction':str(reduction.type)
+                                                 },
+                                            variable=self.variable,unit="m³/s",names= names)
+                
+                graphs.append(graph)
+                line = Table('Annual %(reduction)s %(discretization)s means' % 
+                             {'reduction':reduction.type,
+                              'discretization':discretization.type},
+                             data_mean['pre_data'],
+                             data_mean['pos_data'],
+                )
+                datas.append(line)
+        return datas,graphs
+    
+    def Group3cv(self):
+        datas=[]
+        for reduction in Reduction.objects.filter(stats_type__type = 'julian date'):
+            data_mean = {}
+            discretization = Discretization.objects.get(type_en_us="annual")
+            for type_data in self.daily:
+                daily_data = self.daily[type_data]
+                julian = JulianDate(self.station.id,self.variable.id)
+                date,data = julian.reduce(daily_data,discretization,reduction)
+                mean_=sum(data)/len(data)
+                std_ = std(data)
+                cv = std_/mean_
+                data_mean[type_data]=round(cv,2)
+            line = Table('Julian date of annual %(reduction)s' % 
+                             {'reduction':reduction.type,
+                              'discretization':discretization.type},
+                             data_mean['pre_data'],
+                             data_mean['pos_data'],
+            )
+            datas.append(line)
+        return datas
+            
+    
+    def Group4cv(self):
+        datas=[]
+        classes={'pulse count':PulseCount,'pulse duration':PulseDuration}
+        for type_classe in classes:
+            for reduction in Reduction.objects.filter(stats_type__type = type_classe):
+                data_mean = {}
+                discretization = Discretization.objects.get(type_en_us="annual")
+                for type_data in self.daily:
+                    daily_data = self.daily[type_data]
+                    julian = classes[type_classe](self.station.id,self.variable.id)
+                    date,data = julian.reduce(daily_data,discretization,reduction)
+                    mean_=sum(data)/len(data)
+                    std_ = std(data)
+                    cv = std_/mean_
+                    data_mean[type_data]=round(cv,2)
+                line = Table('%(reduction)s' % 
+                                 {'reduction':reduction.type,
+                                  'discretization':discretization.type},
+                                 data_mean['pre_data'],
+                                 data_mean['pos_data'],
+                )
+                datas.append(line)
+                
+        return datas
+                
+    def Group5cv(self):
+        datas=[]
+        classes={'frequency of change':FrequencyOfChange,'rate of change':RateOfChange}
+        for type_classe in classes:
+            for reduction in Reduction.objects.filter(stats_type__type = type_classe):
+                data_mean = {}
+                discretization = Discretization.objects.get(type_en_us="annual")
+                for type_data in self.daily:
+                    daily_data = self.daily[type_data]
+                    julian = classes[type_classe](self.station.id,self.variable.id)
+                    date,data = julian.reduce(daily_data,discretization,reduction)
+                    mean_=sum(data)/len(data)
+                    std_ = std(data)
+                    cv = std_/mean_
+                    data_mean[type_data]=round(cv,2)
                 line = Table('%(reduction)s' % 
                                  {'reduction':reduction.type,
                                   'discretization':discretization.type},

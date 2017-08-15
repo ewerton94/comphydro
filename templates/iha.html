@@ -74,7 +74,7 @@
 
                 
     <tr>
-         <td colspan="4" ><b>Group 4 - Rate and Frequency of change</b></td>
+         <td colspan="4" ><b>Group 4 - Frequency and duration of low and high pulses</b></td>
      </tr>
        {% for var in group4 %}
       <tr>
@@ -93,6 +93,111 @@
          <td colspan="4" ><b>Group 5 - Rate and Frequency of change</b></td>
      </tr>
        {% for var in group5 %}
+      <tr>
+        <td>{{ var.title }}</td>
+        <td>{{ var.pre_data }}</td>
+        <td>{{ var.pos_data }}</td>
+        <td>{{ var.deviation_magnitude }}/{{ var.percent }}</td>
+        <td>{{ var.value }}</td>
+      </tr>
+        {% endfor %}
+        
+        
+    </tbody>
+  </table>
+                         
+                          </div>
+            <!-- /.box-body -->
+          </div>
+                             
+                             
+                             
+                             <div class="box box-success">
+            <div class="box-header with-border">
+             <i class="fa fa-files-o"></i>
+              <h3 class="box-title">{% blocktrans  %}Coefficients of variation{% endblocktrans %}</h3>
+
+              <div class="box-tools pull-right">
+                <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i>
+                </button>
+                <button type="button" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i></button>
+              </div>
+            </div>
+            <!-- /.box-header -->
+            <div class="box-body no-padding">
+                         
+                                 <table class="table">
+    <thead>
+      <tr>
+        <th>IHA Group</th>
+        <th>Pre-impact</th>
+        <th>Pos-impact</th>
+        <th>Deviation<br>Magnitude/%</th>
+        <th>Confidence limits<br>(low-high)</th>
+      </tr>
+    </thead>
+    <tbody>
+     <tr>
+         <td colspan="4" ><b>Group 1 - Monthly Magnitude</b></td>
+     </tr>
+       {% for var in group1cv %}
+      <tr>
+        <td>{{ var.title }}</td>
+        <td>{{ var.pre_data }}</td>
+        <td>{{ var.pos_data }}</td>
+        <td>{{ var.deviation_magnitude }}/{{ var.percent }}</td>
+        <td>{{ var.value }}</td>
+      </tr>
+        {% endfor %}
+        
+    <tr>
+         <td colspan="4" ><b>Group 2 - Magnitude and duration of annual extremes</b></td>
+     </tr>
+       {% for var in group2cv %}
+      <tr>
+        <td>{{ var.title }}</td>
+        <td>{{ var.pre_data }}</td>
+        <td>{{ var.pos_data }}</td>
+        <td>{{ var.deviation_magnitude }}/{{ var.percent }}</td>
+        <td>{{ var.value }}</td>
+      </tr>
+        {% endfor %}
+
+        
+    <tr>
+         <td colspan="4" ><b>Group 3 - Timing of annual extremes</b></td>
+     </tr>
+       {% for var in group3cv %}
+      <tr>
+        <td>{{ var.title }}</td>
+        <td>{{ var.pre_data }}</td>
+        <td>{{ var.pos_data }}</td>
+        <td>{{ var.deviation_magnitude }}/{{ var.percent }}</td>
+        <td>{{ var.value }}</td>
+      </tr>
+        {% endfor %}
+
+                
+    <tr>
+         <td colspan="4" ><b>Group 4 - Frequency and duration of low and high pulses</b></td>
+     </tr>
+       {% for var in group4cv %}
+      <tr>
+        <td>{{ var.title }}</td>
+        <td>{{ var.pre_data }}</td>
+        <td>{{ var.pos_data }}</td>
+        <td>{{ var.deviation_magnitude }}/{{ var.percent }}</td>
+        <td>{{ var.value }}</td>
+      </tr>
+        {% endfor %}
+        
+
+
+                
+    <tr>
+         <td colspan="4" ><b>Group 5 - Rate and Frequency of change</b></td>
+     </tr>
+       {% for var in group5cv %}
       <tr>
         <td>{{ var.title }}</td>
         <td>{{ var.pre_data }}</td>
@@ -135,6 +240,55 @@
           </div>
         {% endfor %} 
                 {% endif %}
+                
+                
+                <div class="box box-success">
+            <div class="box-header with-border">
+             <i class="fa fa-files-o"></i>
+              <h3 class="box-title">{% blocktrans  %}Means{% endblocktrans %}</h3>
+
+              <div class="box-tools pull-right">
+                <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i>
+                </button>
+                <button type="button" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i></button>
+              </div>
+            </div>
+            <!-- /.box-header -->
+            <div class="box-body no-padding">
+                         
+                                 <table class="table">
+    <thead>
+      <tr>
+        <th>IHA Group</th>
+        <th>Pre-impact</th>
+        <th>Pos-impact</th>
+        <th>Deviation<br>Magnitude/%</th>
+        <th>Confidence limits<br>(low-high)</th>
+      </tr>
+    </thead>
+    <tbody>
+     <tr>
+         <td colspan="4" ><b>Reference Flow</b></td>
+     </tr>
+       {% for var in reference_flow %}
+      <tr>
+        <td>{{ var.title }}</td>
+        <td>{{ var.pre_data }}</td>
+        <td>{{ var.pos_data }}</td>
+        <td>{{ var.deviation_magnitude }}/{{ var.percent }}</td>
+        <td>{{ var.value }}</td>
+      </tr>
+        {% endfor %}
+        
+        
+        
+    </tbody>
+  </table>
+                         
+                          </div>
+            <!-- /.box-body -->
+          </div>
+                             
 {% endblock %}
 
 {% block stats %}{% endblock %}    

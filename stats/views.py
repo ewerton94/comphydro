@@ -10,9 +10,8 @@ from data.models import Variable
 from datetime import datetime
 
 from .models import Reduction,ReducedSerie,RollingMeanSerie
-from .stats import BasicStats,RollingMean,RateOfChange,FrequencyOfChange,IHA,JulianDate
+from .stats import BasicStats,RollingMean,RateOfChange,FrequencyOfChange,IHA,JulianDate,PulseCount,PulseDuration,ReferenceFlow
 import pandas as pd
-
 
 def export_xls(reduceds,stats_name):
     import xlwt
@@ -64,9 +63,11 @@ class StatsView():
             filters.get('reduction',None),
             stats_name
         )
+        
         basic_stats.get_or_create_reduced_series()
         if 'file' in filters:
             return export_xls(basic_stats.reduceds,stats_name)
+        
         return render(self.request,'stats_information.html',{'BASE_URL':"",'sources':basic_stats.sources,
                                                           'reduceds':basic_stats.reduceds,
                                                           'station':basic_stats.station,
@@ -100,6 +101,22 @@ def frequency_of_change(request,**kwargs):
         kwargs['filters']+="discretization=A"
     return stats.get_data(kwargs['station_id'],'frequency of change',kwargs['filters'])
 
+def pulse_count(request,**kwargs):
+    stats = StatsView(request,PulseCount)
+    if 'discretization' in kwargs['filters']:
+        kwargs['filters']=kwargs['filters'].split('discretization')[0]+"discretization=A"
+    else:
+        kwargs['filters']+="discretization=A"
+    return stats.get_data(kwargs['station_id'],'pulse count',kwargs['filters'])
+
+def pulse_duration(request,**kwargs):
+    stats = StatsView(request,PulseDuration)
+    if 'discretization' in kwargs['filters']:
+        kwargs['filters']=kwargs['filters'].split('discretization')[0]+"discretization=A"
+    else:
+        kwargs['filters']+="discretization=A"
+    return stats.get_data(kwargs['station_id'],'pulse duration',kwargs['filters'])
+
 def julian_date(request,**kwargs):
     stats = StatsView(request,JulianDate)
     if 'discretization' in kwargs['filters']:
@@ -107,6 +124,16 @@ def julian_date(request,**kwargs):
     else:
         kwargs['filters']+="discretization=A"
     return stats.get_data(kwargs['station_id'],'julian date',kwargs['filters'])
+
+def reference_flow(request,**kwargs):
+    stats = StatsView(request,ReferenceFlow)
+    if 'discretization' in kwargs['filters']:
+        kwargs['filters']=kwargs['filters'].split('discretization')[0]+"discretization=A"
+    else:
+        kwargs['filters']+="discretization=A"
+    return stats.get_data(kwargs['station_id'],'reference flow',kwargs['filters'])
+
+
 
 def iha(request,**kwargs):
     filters = furl("?"+kwargs['filters']).args
@@ -120,20 +147,33 @@ def iha(request,**kwargs):
             
            )
     group1=g.Group1()
+    reference_flow,graph_rf=g.ReferenceFlow()
+    group1cv=g.Group1cv()
     group2,graphs2=g.Group2()
+    group2cv,graphscv=g.Group2cv()
     group3=g.Group3()
+    group3cv=g.Group3cv()
     group4=g.Group4()
+    group4cv=g.Group4cv()
     group5=g.Group5()
+    group5cv=g.Group5cv()
     sources=set([g.station.source,g.other.source])
+    graphs2.append(graph_rf)
     return render(request,'iha.html',{'BASE_URL':"",'station':g.station,
                                                              'aba':"IHA",
                                       'sources':sources,
                                       'stats':get_stats_list(request,[g.variable,]),
                                            'group1':group1,
+                                           'group1cv':group1cv,
                                            'group2':group2,
+                                           'group2cv':group2cv,
                                            'group3':group3,
+                                           'group3cv':group3cv,
                                            'group4':group4,
+                                           'group4cv':group4cv,
                                            'group5':group5,
+                                           'group5cv':group5cv,
                                       'graphs':graphs2,
+                                      'reference_flow':reference_flow,
                                                          })
     
