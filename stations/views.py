@@ -59,9 +59,7 @@ def create_station(request):
 
 def stations(request):
     mpt='pk.eyJ1IjoiYWRlbHNvbmpyIiwiYSI6ImNqNTV0czRkejBnMnkzMnBtdXdsbmRlbDcifQ.Ox8xbLTD_cD7h3uEz13avQ'
-    lat=[]
-    lon=[]
-    text=[]
+    lat,lon,text=[],[],[]
     stations_ = Station.objects.all()
     context={'BASE_URL':"",'stations':stations}
     if stations_:

@@ -211,11 +211,14 @@ class BaseAnnualEvents(BaseStats,metaclass=ABCMeta):
     def get_reduced_value(self,df,reduction):
         pass
     
-    def reduce(self,daily,discretization,reduction):
+    def reduce(self,daily,discretization,reduction,limiar=None,median=None):
         hydrologic_years = self.hydrologic_years_dict(daily,reduction.hydrologic_year_type)
         years = sorted(list(hydrologic_years.keys())[1:])
         data = []
-        if self.calculate_limiar:
+        if not all([limiar is None,median is None]):
+            self.median=median
+            self.limiar=limiar
+        if all([self.calculate_limiar,limiar is None,median is None]):
             self.median = daily.median().values[0]
             self.limiar = daily.quantile(quantils[reduction.hydrologic_year_type]).values[0]
         for year in years:
@@ -351,8 +354,8 @@ class IHA:
         
     def Group1(self):
         month_names=[_('January'),_('February'),_('March'),_('April'),
-                     _('May'),_('June'),_('July'),'August','September',
-                     _('October'),'November','December']
+                     _('May'),_('June'),_('July'),_('August'),_('September'),
+                     _('October'),_('November'),_('December')]
         data={}
         for type_data in self.daily:
             daily_data = self.daily[type_data]
@@ -362,8 +365,8 @@ class IHA:
         return [Table(month_names[i],data['pre_data'][i],data['pos_data'][i]) for i in range(12)]
     def ReferenceFlow(self):
         month_names=[_('January'),_('February'),_('March'),_('April'),
-                     _('May'),_('June'),_('July'),'August','September',
-                     _('October'),'November','December']
+                     _('May'),_('June'),_('July'),_('August'),_('September'),
+                     _('October'),_('November'),_('December')]
         data={}
         xys=[]
         names=[]
@@ -377,7 +380,7 @@ class IHA:
             names.append(type_data)
 
         graph=plot_web(xys=xys,title=_("Reference Flow"),
-                                    variable="Flow",unit="m³/s",names=names)
+                                    variable=_("Flow"),unit="m³/s",names=names)
 
         return [Table(month_names[i],data['pre_data'][i],data['pos_data'][i]) for i in range(12)],graph
             
@@ -426,6 +429,7 @@ class IHA:
         for reduction in Reduction.objects.filter(stats_type__type = 'julian date'):
             data_mean = {}
             discretization = Discretization.objects.get(type_en_us="annual")
+            
             for type_data in self.daily:
                 daily_data = self.daily[type_data]
                 julian = JulianDate(self.station.id,self.variable.id)
@@ -448,10 +452,12 @@ class IHA:
             for reduction in Reduction.objects.filter(stats_type__type = type_classe):
                 data_mean = {}
                 discretization = Discretization.objects.get(type_en_us="annual")
+                limiar = self.daily['pre_data'].quantile(quantils[reduction.hydrologic_year_type]).values[0]
+                median = self.daily['pre_data'].median().values[0]
                 for type_data in self.daily:
                     daily_data = self.daily[type_data]
                     julian = classes[type_classe](self.station.id,self.variable.id)
-                    date,data = julian.reduce(daily_data,discretization,reduction)
+                    date,data = julian.reduce(daily_data,discretization,reduction,limiar,median)
                     mean_=sum(data)/len(data)
                     data_mean[type_data]=round(mean_,2)
                 line = Table('%(reduction)s' % 
@@ -573,13 +579,18 @@ class IHA:
             for reduction in Reduction.objects.filter(stats_type__type = type_classe):
                 data_mean = {}
                 discretization = Discretization.objects.get(type_en_us="annual")
+                median = self.daily['pre_data'].median().values[0]
+                limiar = self.daily['pre_data'].quantile(quantils[reduction.hydrologic_year_type]).values[0]
                 for type_data in self.daily:
                     daily_data = self.daily[type_data]
                     julian = classes[type_classe](self.station.id,self.variable.id)
-                    date,data = julian.reduce(daily_data,discretization,reduction)
+                    date,data = julian.reduce(daily_data,discretization,reduction,limiar,median)
                     mean_=sum(data)/len(data)
                     std_ = std(data)
-                    cv = std_/mean_
+                    if mean_==0:
+                        cv=0
+                    else:
+                        cv = std_/mean_
                     data_mean[type_data]=round(cv,2)
                 line = Table('%(reduction)s' % 
                                  {'reduction':reduction.type,

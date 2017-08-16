@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-08-12 17:30-0300\n"
+"POT-Creation-Date: 2017-08-16 10:35-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -29,6 +29,10 @@ msgstr "Português"
 #: .\data\apps.py:5 .\data\models.py:9
 msgid "data"
 msgstr "dado"
+
+#: .\data\graphs.py:18 .\data\graphs.py:36
+msgid "time"
+msgstr "tempo"
 
 #: .\data\models.py:10 .\data\models.py:70
 msgid "date and time"
@@ -118,7 +122,7 @@ msgstr "posto"
 msgid "level of consistency"
 msgstr "nível de consistência"
 
-#: .\data\models.py:73 .\stats\models.py:17 .\stats\models.py:32
+#: .\data\models.py:73 .\stats\models.py:18 .\stats\models.py:33
 msgid "discretization"
 msgstr "discretização"
 
@@ -134,10 +138,6 @@ msgstr "Séries Originais"
 #: .\data\models.py:81
 msgid "Original Serie"
 msgstr "Série Original"
-
-#: .\data\views.py:17 .\data\views.py:35
-msgid "time"
-msgstr "tempo"
 
 #: .\stations\apps.py:5
 msgid "stations"
@@ -229,8 +229,8 @@ msgstr "nome"
 msgid "localization"
 msgstr "localização"
 
-#: .\stations\reads_data.py:141 .\stations\reads_data.py:168
-#: .\stations\reads_data.py:270
+#: .\stations\reads_data.py:150 .\stations\reads_data.py:184
+#: .\stations\reads_data.py:297
 #, python-format
 msgid "There is no data from '%s' variable in this station."
 msgstr "Não exte dados da variável '%s' neste posto."
@@ -251,13 +251,25 @@ msgstr "Razão de mudança"
 msgid "Frequency of change"
 msgstr "Frequência de mudança"
 
-#: .\stations\utils.py:33
+#: .\stations\utils.py:33 .\templates\iha.html:3
 msgid "Indicators of Hydrologic Alterations"
 msgstr "Indicadores de alteração Hidrológica"
 
 #: .\stations\utils.py:34
 msgid "Julian Date"
 msgstr "Data Juliana"
+
+#: .\stations\utils.py:35
+msgid "Pulse Count"
+msgstr "Número de pulsos"
+
+#: .\stations\utils.py:36
+msgid "Pulse Duration"
+msgstr "Duração de pulsos"
+
+#: .\stations\utils.py:37 .\stats\stats.py:382
+msgid "Reference Flow"
+msgstr "Vazão de Referência"
 
 #: .\stations\views.py:37
 #, python-format
@@ -284,94 +296,156 @@ msgstr "Data inicial"
 msgid "Final Date"
 msgstr "Data Final"
 
-#: .\stats\models.py:9
-msgid "Reductions"
-msgstr "Reduções"
-
-#: .\stats\models.py:10
-msgid "Reduction"
-msgstr "Redução"
-
-#: .\stats\models.py:16 .\stats\models.py:30
-#, fuzzy
-#| msgid "Original Serie"
-msgid "original serie"
-msgstr "Série Original"
-
-#: .\stats\models.py:18
-msgid "reduction"
-msgstr "redução"
-
-#: .\stats\models.py:19 .\stats\models.py:31
+#: .\stats\models.py:8 .\stats\models.py:20 .\stats\models.py:32
 #, fuzzy
 #| msgid "Temporal Serie"
 msgid "temporal serie id"
 msgstr "Série Temporal"
 
-#: .\stats\models.py:21
+#: .\stats\models.py:10
+msgid "Reductions"
+msgstr "Reduções"
+
+#: .\stats\models.py:11
+msgid "Reduction"
+msgstr "Redução"
+
+#: .\stats\models.py:17 .\stats\models.py:31
+#, fuzzy
+#| msgid "Original Serie"
+msgid "original serie"
+msgstr "Série Original"
+
+#: .\stats\models.py:19
+msgid "reduction"
+msgstr "redução"
+
+#: .\stats\models.py:22
 msgid "Reduced Series"
 msgstr "Séries reduzidas"
 
-#: .\stats\models.py:22
+#: .\stats\models.py:23
 msgid "Reduced Serie"
 msgstr "Série reduzida"
 
-#: .\stats\models.py:24
+#: .\stats\models.py:25
 #, python-format
 msgid "%(discretization)s %(reduction)s Serie from %(station)s station"
 msgstr ""
 
-#: .\stats\models.py:34
+#: .\stats\models.py:35
 #, fuzzy
 #| msgid "Rolling Mean"
 msgid "Rolling mean series"
 msgstr "Médias móveis"
 
-#: .\stats\models.py:35
+#: .\stats\models.py:36
 #, fuzzy
 #| msgid "Rolling Mean"
 msgid "Rolling mean serie"
 msgstr "Médias móveis"
 
-#: .\stats\models.py:37
+#: .\stats\models.py:38
 #, python-format
 msgid "%s Serie"
-msgstr ""
+msgstr "Série %s"
 
-#: .\stats\stats.py:120
+#: .\stats\stats.py:122
 msgid "daily_data"
 msgstr "dados diários"
 
-#: .\stats\stats.py:130 .\stats\stats.py:214 .\stats\stats.py:228
-#: .\stats\stats.py:267
+#: .\stats\stats.py:133 .\stats\stats.py:235 .\stats\stats.py:250
+#: .\stats\stats.py:308
 #, fuzzy, python-format
 #| msgid "discretization"
 msgid "%(discretization)s %(variable)s"
 msgstr "discretização"
 
-#: .\stats\stats.py:215
+#: .\stats\stats.py:236
 msgid "rate of change"
 msgstr "razão de mudança"
 
-#: .\stats\stats.py:218
+#: .\stats\stats.py:239
 msgid "rate"
 msgstr "razão"
 
-#: .\stats\stats.py:229
+#: .\stats\stats.py:251
 msgid "frequency of change"
 msgstr "frequência de mudança"
 
-#: .\stats\stats.py:232
+#: .\stats\stats.py:254
 msgid "frequency"
 msgstr "frequência"
 
-#: .\stats\stats.py:268
+#: .\stats\stats.py:309
 msgid "Rate"
 msgstr "Razão"
 
-#: .\stats\stats.py:271
+#: .\stats\stats.py:312
 msgid "julian date"
 msgstr "data juliana"
+
+#: .\stats\stats.py:356 .\stats\stats.py:367 .\stats\stats.py:497
+msgid "January"
+msgstr ""
+
+#: .\stats\stats.py:356 .\stats\stats.py:367 .\stats\stats.py:497
+msgid "February"
+msgstr ""
+
+#: .\stats\stats.py:356 .\stats\stats.py:367 .\stats\stats.py:497
+msgid "March"
+msgstr ""
+
+#: .\stats\stats.py:356 .\stats\stats.py:367 .\stats\stats.py:497
+msgid "April"
+msgstr ""
+
+#: .\stats\stats.py:357 .\stats\stats.py:368 .\stats\stats.py:498
+msgid "May"
+msgstr ""
+
+#: .\stats\stats.py:357 .\stats\stats.py:368 .\stats\stats.py:498
+msgid "June"
+msgstr ""
+
+#: .\stats\stats.py:357 .\stats\stats.py:368 .\stats\stats.py:498
+msgid "July"
+msgstr ""
+
+#: .\stats\stats.py:357 .\stats\stats.py:368
+msgid "August"
+msgstr ""
+
+#: .\stats\stats.py:357 .\stats\stats.py:368
+msgid "September"
+msgstr ""
+
+#: .\stats\stats.py:358 .\stats\stats.py:369 .\stats\stats.py:499
+msgid "October"
+msgstr ""
+
+#: .\stats\stats.py:358 .\stats\stats.py:369
+msgid "November"
+msgstr ""
+
+#: .\stats\stats.py:358 .\stats\stats.py:369
+msgid "December"
+msgstr ""
+
+#: .\stats\stats.py:383
+msgid "Flow"
+msgstr "Vazão"
+
+#: .\stats\stats.py:407 .\stats\stats.py:533
+msgid "mean"
+msgstr "média"
+
+#: .\stats\stats.py:410 .\stats\stats.py:535
+#, fuzzy, python-format
+#| msgid "discretization"
+msgid "%(discretization)s %(variable)s %(reduction)s"
+msgstr "discretização"
 
 #: .\templates\base.html:9 .\templates\base.html:181
 msgid "Computational Hydrology"
@@ -421,11 +495,59 @@ msgstr "Criar um novo posto"
 msgid "Station Information"
 msgstr "Informações do posto"
 
-#: .\templates\iha.html:13
+#: .\templates\iha.html:13 .\templates\iha.html:248
 msgid "Means"
 msgstr "Médias"
 
-#: .\templates\station_information.html:11
+#: .\templates\iha.html:27 .\templates\iha.html:132
+msgid "IHA Group"
+msgstr "Grupo IHA"
+
+#: .\templates\iha.html:28 .\templates\iha.html:133
+msgid "Pre-impact"
+msgstr "Pré-impacto"
+
+#: .\templates\iha.html:29 .\templates\iha.html:134
+msgid "Pos-impact"
+msgstr "Pós-impacto"
+
+#: .\templates\iha.html:30 .\templates\iha.html:135
+#, fuzzy
+#| msgid "Discretization"
+msgid "Deviation"
+msgstr "Discretização"
+
+#: .\templates\iha.html:31 .\templates\iha.html:136
+msgid "Confidence limits"
+msgstr "Intervalos de confiança"
+
+#: .\templates\iha.html:36 .\templates\iha.html:141
+msgid "Group 1 - Monthly Magnitude"
+msgstr "Grupo 1 - Magnitude Mensal"
+
+#: .\templates\iha.html:49 .\templates\iha.html:154
+msgid "Group 2 - Magnitude and duration of annual extremes"
+msgstr "Grupo 2 - Magnitude e duração de extremos anuais"
+
+#: .\templates\iha.html:63 .\templates\iha.html:168
+msgid "Group 3 - Timing of annual extremes"
+msgstr "Grupo 3 - Período de ocorrência de extremos anuais"
+
+#: .\templates\iha.html:77 .\templates\iha.html:182
+msgid "Group 4 - Frequency and duration of low and high pulses"
+msgstr "Grupo 4 - Frequência e duração de pulsos de cheaia e estiagem"
+
+#: .\templates\iha.html:93 .\templates\iha.html:198
+#, fuzzy
+#| msgid "Frequency of change"
+msgid "Group 5 - Rate and Frequency of change"
+msgstr "Grupo 5 - Razão e Frequência de mudança"
+
+#: .\templates\iha.html:118
+msgid "Coefficients of variation"
+msgstr "Coeficientes de variação"
+
+#: .\templates\iha.html:222 .\templates\station_information.html:11
 #: .\templates\stats_information.html:12
 #, python-format
 msgid "Hydrogram %(variable)s - %(tipo_dado)s Data"

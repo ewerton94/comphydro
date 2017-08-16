@@ -1,8 +1,8 @@
 {% extends 'base_information.html' %}
 {% load i18n %}
-{% block title %}Station Information | {% endblock %}
-{% block title_head %}{% trans 'Station Information' %}{% endblock %}
-{% block subtitle %}{{ station }}{% endblock %}
+{% block title %}{% blocktrans  %}Indicators of Hydrologic Alterations{% endblocktrans %} | {% endblock %}
+{% block title_head %}{% blocktrans  %}Indicators of Hydrologic Alterations{% endblocktrans %}{% endblock %}
+{% block subtitle %}<a href="{{ BASE_URL }}/{{ LANGUAGE_CODE }}/stations/{{ station.id }}/information">{{ station }}</a>{% endblock %}
 {% block data %}
         
 
@@ -24,16 +24,16 @@
                                  <table class="table">
     <thead>
       <tr>
-        <th>IHA Group</th>
-        <th>Pre-impact</th>
-        <th>Pos-impact</th>
-        <th>Deviation<br>Magnitude/%</th>
-        <th>Confidence limits<br>(low-high)</th>
+        <th>{% blocktrans  %}IHA Group{% endblocktrans %}</th>
+        <th>{% blocktrans  %}Pre-impact{% endblocktrans %}</th>
+        <th>{% blocktrans  %}Pos-impact{% endblocktrans %}</th>
+        <th>{% blocktrans  %}Deviation{% endblocktrans %}<br>Magnitude/%</th>
+        <th>{% blocktrans  %}Confidence limits{% endblocktrans %}<br>(low-high)</th>
       </tr>
     </thead>
     <tbody>
      <tr>
-         <td colspan="4" ><b>Group 1 - Monthly Magnitude</b></td>
+         <td colspan="4" ><b>{% blocktrans  %}Group 1 - Monthly Magnitude{% endblocktrans %}</b></td>
      </tr>
        {% for var in group1 %}
       <tr>
@@ -46,7 +46,7 @@
         {% endfor %}
         
     <tr>
-         <td colspan="4" ><b>Group 2 - Magnitude and duration of annual extremes</b></td>
+         <td colspan="4" ><b>{% blocktrans  %}Group 2 - Magnitude and duration of annual extremes{% endblocktrans %}</b></td>
      </tr>
        {% for var in group2 %}
       <tr>
@@ -60,7 +60,7 @@
 
         
     <tr>
-         <td colspan="4" ><b>Group 3 - Timing of annual extremes</b></td>
+         <td colspan="4" ><b>{% blocktrans  %}Group 3 - Timing of annual extremes{% endblocktrans %}</b></td>
      </tr>
        {% for var in group3 %}
       <tr>
@@ -74,7 +74,7 @@
 
                 
     <tr>
-         <td colspan="4" ><b>Group 4 - Frequency and duration of low and high pulses</b></td>
+         <td colspan="4" ><b>{% blocktrans  %}Group 4 - Frequency and duration of low and high pulses{% endblocktrans %}</b></td>
      </tr>
        {% for var in group4 %}
       <tr>
@@ -90,7 +90,7 @@
 
                 
     <tr>
-         <td colspan="4" ><b>Group 5 - Rate and Frequency of change</b></td>
+         <td colspan="4" ><b>{% blocktrans  %}Group 5 - Rate and Frequency of change{% endblocktrans %}</b></td>
      </tr>
        {% for var in group5 %}
       <tr>
@@ -129,16 +129,16 @@
                                  <table class="table">
     <thead>
       <tr>
-        <th>IHA Group</th>
-        <th>Pre-impact</th>
-        <th>Pos-impact</th>
-        <th>Deviation<br>Magnitude/%</th>
-        <th>Confidence limits<br>(low-high)</th>
+        <th>{% blocktrans  %}IHA Group{% endblocktrans %}</th>
+        <th>{% blocktrans  %}Pre-impact{% endblocktrans %}</th>
+        <th>{% blocktrans  %}Pos-impact{% endblocktrans %}</th>
+        <th>{% blocktrans  %}Deviation{% endblocktrans %}<br>Magnitude/%</th>
+        <th>{% blocktrans  %}Confidence limits{% endblocktrans %}<br>(low-high)</th>
       </tr>
     </thead>
     <tbody>
      <tr>
-         <td colspan="4" ><b>Group 1 - Monthly Magnitude</b></td>
+         <td colspan="4" ><b>{% blocktrans  %}Group 1 - Monthly Magnitude{% endblocktrans %}</b></td>
      </tr>
        {% for var in group1cv %}
       <tr>
@@ -151,7 +151,7 @@
         {% endfor %}
         
     <tr>
-         <td colspan="4" ><b>Group 2 - Magnitude and duration of annual extremes</b></td>
+         <td colspan="4" ><b>{% blocktrans  %}Group 2 - Magnitude and duration of annual extremes{% endblocktrans %}</b></td>
      </tr>
        {% for var in group2cv %}
       <tr>
@@ -165,7 +165,7 @@
 
         
     <tr>
-         <td colspan="4" ><b>Group 3 - Timing of annual extremes</b></td>
+         <td colspan="4" ><b>{% blocktrans  %}Group 3 - Timing of annual extremes{% endblocktrans %}</b></td>
      </tr>
        {% for var in group3cv %}
       <tr>
@@ -179,7 +179,7 @@
 
                 
     <tr>
-         <td colspan="4" ><b>Group 4 - Frequency and duration of low and high pulses</b></td>
+         <td colspan="4" ><b>{% blocktrans  %}Group 4 - Frequency and duration of low and high pulses{% endblocktrans %}</b></td>
      </tr>
        {% for var in group4cv %}
       <tr>
@@ -195,7 +195,7 @@
 
                 
     <tr>
-         <td colspan="4" ><b>Group 5 - Rate and Frequency of change</b></td>
+         <td colspan="4" ><b>{% blocktrans  %}Group 5 - Rate and Frequency of change{% endblocktrans %}</b></td>
      </tr>
        {% for var in group5cv %}
       <tr>
