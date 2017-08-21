@@ -7,7 +7,7 @@ from django.utils.translation import gettext as _
 
 
 
-def plot_web(xys,title,variable,unit,names=[]):
+def plot_web(xys,title,variable,unit,names=[],xaxis_title=_('time')):
     data=[Scatter(x=xy[0], y=xy[1]) for xy in xys]
     if names:
         for i in range(len(data)):
@@ -15,7 +15,7 @@ def plot_web(xys,title,variable,unit,names=[]):
     return plot({
                     'data':data,
         
-                    'layout':Layout(title=title,xaxis={'title':_('time')},yaxis={'title':"%s (%s)"
+                    'layout':Layout(title=title,xaxis={'title':xaxis_title},yaxis={'title':"%s (%s)"
                                                                                       %(str(variable),
                                                                                         str(unit))})
 

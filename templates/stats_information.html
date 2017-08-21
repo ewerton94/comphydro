@@ -6,10 +6,11 @@
 {% block subtitle %}<a href="{{ BASE_URL }}/{{ LANGUAGE_CODE }}/stations/{{ station.id }}/information">{{ station }}</a>{% endblock %}
 {% block data %}
          {% for reduced in reduceds %}
+                  
                    <div class="box box-success">
             <div class="box-header with-border">
              <i class="fa fa-files-o"></i>
-              <h3 class="box-title">{% blocktrans with variable=reduced.reduceds.0.original_serie.variable tipo_dado=reduced.discretization.type %}Hydrogram {{ variable }} - {{ tipo_dado }} Data{% endblocktrans %}</h3>
+              <h3 class="box-title">{{reduced.title}}</h3>
 
               <div class="box-tools pull-right">
                 <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i>
@@ -18,7 +19,19 @@
               </div>
             </div>
             <!-- /.box-header -->
+            
+            <div class="box-body">
+            {% if reduced.parameters %}
+             <p><b>Parameters:</b></p>
+             {% for key,value in reduced.parameters.items %}
+             <p>{{ key }}: {{ value }}</p>
+                {% endfor %} 
+                {% endif %}
+                       </div>
+
             <div class="box-body no-padding">
+                          
+             
               <div class="">
                               {% if reduced.graph %}
                 <div style="max-width:inherited;">

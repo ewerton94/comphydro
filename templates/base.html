@@ -121,7 +121,7 @@
             
            
            {% for stat in stats %}
-            <li class="{% if aba == stat.short_name %}active{% endif %}"><a href="{{ BASE_URL }}/{{ LANGUAGE_CODE }}/stats/{{ stat.short_name }}/{{ station.id }}"><i class="fa fa-circle-o"></i>{{ stat.name }}</a></li>
+            <li class="{% if aba == stat.short_name %}active{% endif %}"><a href="{{ BASE_URL }}/{{ LANGUAGE_CODE }}/stats/{{ stat.short_name }}/{{ station.id }}/10"><i class="fa fa-circle-o"></i>{{ stat.name }}</a></li>
             {% endfor %}
           </ul>
         </li>
@@ -154,7 +154,7 @@
           <ul class="treeview-menu">
                        {% for variable in variables %}
                         <li ><a href="variable={{ variable.0 }}"><i class="fa fa-circle-o"></i>{{ variable.1 }}</a></li>
-                        {% endfor %}
+                       {% endfor %}
           </ul>
         </li>
         {% endif %}

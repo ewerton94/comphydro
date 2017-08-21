@@ -10,7 +10,7 @@ from data.models import Variable
 from datetime import datetime
 
 from .models import Reduction,ReducedSerie,RollingMeanSerie
-from .stats import BasicStats,RollingMean,RateOfChange,FrequencyOfChange,IHA,JulianDate,PulseCount,PulseDuration,ReferenceFlow
+from .stats import BasicStats,RollingMean,RateOfChange,FrequencyOfChange,IHA,JulianDate,PulseCount,PulseDuration,ReferenceFlow,cv
 import pandas as pd
 
 def export_xls(reduceds,stats_name):
@@ -67,12 +67,12 @@ class StatsView():
         basic_stats.get_or_create_reduced_series()
         if 'file' in filters:
             return export_xls(basic_stats.reduceds,stats_name)
-        
         return render(self.request,'stats_information.html',{'BASE_URL':"",'sources':basic_stats.sources,
                                                           'reduceds':basic_stats.reduceds,
                                                           'station':basic_stats.station,
                                                           'stats':get_stats_list(self.request,[]),
                                                              'aba':"_".join(stats_name.split()),
+                                                  
                                                     
                                                          })
         
@@ -151,12 +151,19 @@ def iha(request,**kwargs):
     group1cv=g.Group1cv()
     group2,graphs2=g.Group2()
     group2cv,graphscv=g.Group2cv()
-    group3=g.Group3()
-    group3cv=g.Group3cv()
-    group4=g.Group4()
-    group4cv=g.Group4cv()
-    group5=g.Group5()
-    group5cv=g.Group5cv()
+    #Group 3 - Period of extremes
+    classes={'julian date':JulianDate}
+    group3=g.Group(classes)
+    group3cv=g.Group(classes,function_reduce=cv)
+    #Group 4 - Pulses
+    classes={'pulse count':PulseCount,'pulse duration':PulseDuration}
+    group4=g.Group(classes,calculate_limiar=True)
+    group4cv=g.Group(classes,function_reduce=cv,calculate_limiar=True)
+    #Group 5 - Rate and Frequency of change
+    classes={'frequency of change':FrequencyOfChange,'rate of change':RateOfChange}
+    group5=g.Group(classes)
+    group5cv=g.Group(classes,function_reduce=cv,calculate_limiar=True)
+    #sources
     sources=set([g.station.source,g.other.source])
     graphs2.append(graph_rf)
     return render(request,'iha.html',{'BASE_URL':"",'station':g.station,

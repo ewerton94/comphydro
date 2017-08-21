@@ -46,6 +46,10 @@ def get_available_variables(station):
 
 class BaseStats(StationInfo,metaclass=ABCMeta):
     plot_daily=False
+    plot_permancence_curve=False
+    def get_parameters(self,temporal_data,reduction,parameters):
+        return {}
+    
     def update_informations(self,discretization_code=None,reduction_id=None,stats_type='standard'):
         if discretization_code is None:
             discretizations=Discretization.objects.all()
@@ -99,6 +103,7 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
         graph=generic_obj()
         reduceds=[]
         xys=[]
+        graph.parameters={}
         for reduction in self.reductions:
             reduced=self.get_reduced_serie(
                 original,discretization,reduction)
@@ -112,6 +117,7 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
                 temporal_data,reduced=self.get_temporal_data(
                     original,discretization,reduction,data,date)
                 reduced.temporals=temporal_data
+            self.get_parameters(daily,reduction,graph.parameters)
             reduceds.append(reduced)
             x=[t.date for t in reduced.temporals]
             y=[t.data for t in reduced.temporals]
@@ -149,6 +155,12 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
             for discretization in discretizations:
                 graph,names = self.get_graphs_data(daily,original,discretization)
                 graph.graph = self.create_graph(graph.xys,original.variable,original.unit,discretization,names)
+                graphs.append(graph)
+            if self.plot_permancence_curve:
+                xys = self.get_permancence_curve_data(daily)
+                graph=generic_obj()
+                graph.graph = plot_web(xys,_('Permanence Curve'),original.variable,original.unit,[_('data'),],'%')
+                graph.title=_('Permanence Curve')
                 graphs.append(graph)
         self.reduceds = graphs
         return self.reduceds
@@ -188,14 +200,24 @@ class RollingMean(BaseStats):
         date = [pd.to_datetime(eval("hydrologic_years[year].groupby(gp).idx%s().values"%reduction_abreviations[reduction.type_en_us])[0])
                  for year in years  if not hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]) is (nan)]
         return date,data
-    
+   
+
+
+
 class ReferenceFlow(BaseStats):
+    plot_permancence_curve=True
+    
+    def get_permancence_curve_data(self,daily):
+        x=[i/1000 for i in range(1001)]
+        y = [daily.quantile(1-i).values[0] for i in x] 
+        return  [[x,y],]
+    
+    def get_parameters(self,daily,reduction,parameters):
+        parameters['Q50'] = daily.quantile(q=0.5, numeric_only=True).values[0]
+        parameters['Q90']=daily.quantile(q=0.1, numeric_only=True).values[0]
+        parameters['Qbase']=parameters['Q90']/parameters['Q50']
+        
     def reduce(self,daily,discretization,reduction):
-        q50=daily.quantile(q=0.5, numeric_only=True)
-        q90=daily.quantile(q=0.1, numeric_only=True)
-        qbase=q90/q50
-        print('Base Flow')
-        print(qbase)
         daily['month']=[o.month for o in daily.index]
         mean_by_month = daily.groupby('month').quantile(q=0.05, numeric_only=True)
         data = [d[0] for d in mean_by_month.values]
@@ -263,13 +285,17 @@ quantils = {'flood':0.75,'drought':0.25}
     
 class PulseCount(BaseAnnualEvents):
     calculate_limiar=True
+    
+    
+    def get_parameters(self,daily,reduction,parameters):
+        parameters['median'] = daily.median().values[0]
+        parameters['%s limiar '%str(reduction)] = daily.quantile(quantils[reduction.hydrologic_year_type]).values[0]
+        
     def get_reduced_value(self, df, reduction):        
         limiar=self.limiar
         m = self.median
         df['num'] = [i for i in range(len(df))]
         eventoM = df[eval("df['data'] "+funcoes_reducao[reduction.type_en_us]+"= m")]
-        print(eventoM.groupby(pd.Grouper(freq="D")).max())
-        print(limiar)
         eventoM=eventoM.dropna()
         eventoM['dif'] = eventoM['num'] - eventoM['num'].shift(1)
         events = split(eventoM['data'], where(eventoM['dif']>1)[0])
@@ -283,6 +309,10 @@ class PulseCount(BaseAnnualEvents):
         
 class PulseDuration(BaseAnnualEvents):
     calculate_limiar=True
+    
+    def get_parameters(self,daily,reduction,parameters):
+        parameters['median'] = daily.median().values[0]
+        parameters['%s limiar '%str(reduction)] = daily.quantile(quantils[reduction.hydrologic_year_type]).values[0]
     def get_reduced_value(self, df, reduction):
         limiar=self.limiar
         m = self.median
@@ -330,7 +360,46 @@ def get_daily_data(station,variable):
     df = pd.DataFrame({"data" : data}, index=pd.DatetimeIndex(date))
     gp = pd.Grouper(freq='D',sort=True)
     return df.groupby(gp).mean()
+ 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+month_names=[_('January'),_('February'),_('March'),_('April'),
+                     _('May'),_('June'),_('July'),_('August'),_('September'),
+                     _('October'),_('November'),_('December')]
+
+
+def get_mothly_data(daily_data):
+    daily_data['month']=[o.month for o in daily_data.index]
+    mean_by_month = daily_data.groupby('month').mean()
+    return [round(d[0],2) for d in mean_by_month.values]
+
+def get_limiar(df,quantile):
+    return df.quantile(quantile).values[0]
+
+def get_median(df):
+    return df.median().values[0]
+def cv(data):
+    m = mean(data)
+    if m==0:
+        return 0
+    return std(data)/mean(data)
+
+
+    
+
+    
+
 class IHA:
     def __init__(self,station_id,other_id,variable=None,start_year=None,end_year=None):
         self.station = Station.objects.get(id=station_id)
@@ -351,22 +420,35 @@ class IHA:
         self.daily = {'pre_data':pre,
                       'pos_data':pos
                      }
+        self.annual_discretization = Discretization.objects.get(type_en_us="annual")
+        discretizations = list(Discretization.objects.filter(stats_type__type = 'rolling mean'))
+        discretizations.sort(key=lambda x:int(x.pandas_code))
+        self.rolling_mean_discretizations=discretizations
         
-    def Group1(self):
-        month_names=[_('January'),_('February'),_('March'),_('April'),
-                     _('May'),_('June'),_('July'),_('August'),_('September'),
-                     _('October'),_('November'),_('December')]
-        data={}
-        for type_data in self.daily:
-            daily_data = self.daily[type_data]
-            daily_data['month']=[o.month for o in daily_data.index]
-            mean_by_month = daily_data.groupby('month').mean()
-            data[type_data] = [round(d[0],2) for d in mean_by_month.values]
-        return [Table(month_names[i],data['pre_data'][i],data['pos_data'][i]) for i in range(12)]
+    def get_data(self,classes,discretization,title,function_reduce=mean,calculate_limiar=False):
+        datas=[]
+        for type_classe in classes:
+            for reduction in Reduction.objects.filter(stats_type__type = type_classe):
+                data_mean = {}
+                if calculate_limiar:
+                    limiar = get_limiar(self.daily['pre_data'],quantils[reduction.hydrologic_year_type])
+                    median = get_median(self.daily['pre_data'])
+                else: 
+                    limiar,median=None,None
+                for type_data in self.daily:
+                    stat = classes[type_classe](self.station.id,self.variable.id)
+                    date,data = stat.reduce(self.daily[type_data],discretization,reduction,limiar,median)
+                    data_mean[type_data]=round(function_reduce(data),2)
+                line = Table(title % 
+                                 {'reduction':reduction.type,
+                                  'discretization':discretization.type},
+                                 data_mean['pre_data'],
+                                 data_mean['pos_data'],
+                )
+                datas.append(line)
+        return datas
+    
     def ReferenceFlow(self):
-        month_names=[_('January'),_('February'),_('March'),_('April'),
-                     _('May'),_('June'),_('July'),_('August'),_('September'),
-                     _('October'),_('November'),_('December')]
         data={}
         xys=[]
         names=[]
@@ -383,6 +465,13 @@ class IHA:
                                     variable=_("Flow"),unit="m³/s",names=names)
 
         return [Table(month_names[i],data['pre_data'][i],data['pos_data'][i]) for i in range(12)],graph
+    
+    def Group1(self):     
+        data={}
+        for type_data in self.daily:
+            data[type_data] = get_mothly_data(self.daily[type_data])
+        return [Table(month_names[i],data['pre_data'][i],data['pos_data'][i]) for i in range(12)]
+    
             
     
     def Group2(self):
@@ -424,79 +513,12 @@ class IHA:
                 datas.append(line)
         return datas,graphs
     
-    def Group3(self):
-        datas=[]
-        for reduction in Reduction.objects.filter(stats_type__type = 'julian date'):
-            data_mean = {}
-            discretization = Discretization.objects.get(type_en_us="annual")
-            
-            for type_data in self.daily:
-                daily_data = self.daily[type_data]
-                julian = JulianDate(self.station.id,self.variable.id)
-                date,data = julian.reduce(daily_data,discretization,reduction)
-                data_mean[type_data]=round(sum(data)/len(data),2)
-            line = Table('Julian date of annual %(reduction)s' % 
-                             {'reduction':reduction.type,
-                              'discretization':discretization.type},
-                             data_mean['pre_data'],
-                             data_mean['pos_data'],
-            )
-            datas.append(line)
-        return datas
-            
+    def Group(self,classes,string='%(reduction)s',function_reduce=mean,calculate_limiar=False):
+        '''This is a geral method to get the data of Groups 3-5 (annual parameters)'''
+        return self.get_data(classes,self.annual_discretization,string,function_reduce,calculate_limiar)
     
-    def Group4(self):
-        datas=[]
-        classes={'pulse count':PulseCount,'pulse duration':PulseDuration}
-        for type_classe in classes:
-            for reduction in Reduction.objects.filter(stats_type__type = type_classe):
-                data_mean = {}
-                discretization = Discretization.objects.get(type_en_us="annual")
-                limiar = self.daily['pre_data'].quantile(quantils[reduction.hydrologic_year_type]).values[0]
-                median = self.daily['pre_data'].median().values[0]
-                for type_data in self.daily:
-                    daily_data = self.daily[type_data]
-                    julian = classes[type_classe](self.station.id,self.variable.id)
-                    date,data = julian.reduce(daily_data,discretization,reduction,limiar,median)
-                    mean_=sum(data)/len(data)
-                    data_mean[type_data]=round(mean_,2)
-                line = Table('%(reduction)s' % 
-                                 {'reduction':reduction.type,
-                                  'discretization':discretization.type},
-                                 data_mean['pre_data'],
-                                 data_mean['pos_data'],
-                )
-                datas.append(line)
-                
-        return datas
-                
-    def Group5(self):
-        datas=[]
-        classes={'frequency of change':FrequencyOfChange,'rate of change':RateOfChange}
-        for type_classe in classes:
-            for reduction in Reduction.objects.filter(stats_type__type = type_classe):
-                data_mean = {}
-                discretization = Discretization.objects.get(type_en_us="annual")
-                for type_data in self.daily:
-                    daily_data = self.daily[type_data]
-                    julian = classes[type_classe](self.station.id,self.variable.id)
-                    date,data = julian.reduce(daily_data,discretization,reduction)
-                    mean_=sum(data)/len(data)
-                    data_mean[type_data]=round(mean_,2)
-                line = Table('%(reduction)s' % 
-                                 {'reduction':reduction.type,
-                                  'discretization':discretization.type},
-                                 data_mean['pre_data'],
-                                 data_mean['pos_data'],
-                )
-                datas.append(line)
-                
-        return datas
         
     def Group1cv(self):
-        month_names=[_('January'),_('February'),_('March'),_('April'),
-                     _('May'),_('June'),_('July'),'August','September',
-                     _('October'),'November','December']
         data={}
         for type_data in self.daily:
             daily_data = self.daily[type_data]
@@ -548,169 +570,3 @@ class IHA:
                 )
                 datas.append(line)
         return datas,graphs
-    
-    def Group3cv(self):
-        datas=[]
-        for reduction in Reduction.objects.filter(stats_type__type = 'julian date'):
-            data_mean = {}
-            discretization = Discretization.objects.get(type_en_us="annual")
-            for type_data in self.daily:
-                daily_data = self.daily[type_data]
-                julian = JulianDate(self.station.id,self.variable.id)
-                date,data = julian.reduce(daily_data,discretization,reduction)
-                mean_=sum(data)/len(data)
-                std_ = std(data)
-                cv = std_/mean_
-                data_mean[type_data]=round(cv,2)
-            line = Table('Julian date of annual %(reduction)s' % 
-                             {'reduction':reduction.type,
-                              'discretization':discretization.type},
-                             data_mean['pre_data'],
-                             data_mean['pos_data'],
-            )
-            datas.append(line)
-        return datas
-            
-    
-    def Group4cv(self):
-        datas=[]
-        classes={'pulse count':PulseCount,'pulse duration':PulseDuration}
-        for type_classe in classes:
-            for reduction in Reduction.objects.filter(stats_type__type = type_classe):
-                data_mean = {}
-                discretization = Discretization.objects.get(type_en_us="annual")
-                median = self.daily['pre_data'].median().values[0]
-                limiar = self.daily['pre_data'].quantile(quantils[reduction.hydrologic_year_type]).values[0]
-                for type_data in self.daily:
-                    daily_data = self.daily[type_data]
-                    julian = classes[type_classe](self.station.id,self.variable.id)
-                    date,data = julian.reduce(daily_data,discretization,reduction,limiar,median)
-                    mean_=sum(data)/len(data)
-                    std_ = std(data)
-                    if mean_==0:
-                        cv=0
-                    else:
-                        cv = std_/mean_
-                    data_mean[type_data]=round(cv,2)
-                line = Table('%(reduction)s' % 
-                                 {'reduction':reduction.type,
-                                  'discretization':discretization.type},
-                                 data_mean['pre_data'],
-                                 data_mean['pos_data'],
-                )
-                datas.append(line)
-                
-        return datas
-                
-    def Group5cv(self):
-        datas=[]
-        classes={'frequency of change':FrequencyOfChange,'rate of change':RateOfChange}
-        for type_classe in classes:
-            for reduction in Reduction.objects.filter(stats_type__type = type_classe):
-                data_mean = {}
-                discretization = Discretization.objects.get(type_en_us="annual")
-                for type_data in self.daily:
-                    daily_data = self.daily[type_data]
-                    julian = classes[type_classe](self.station.id,self.variable.id)
-                    date,data = julian.reduce(daily_data,discretization,reduction)
-                    mean_=sum(data)/len(data)
-                    std_ = std(data)
-                    cv = std_/mean_
-                    data_mean[type_data]=round(cv,2)
-                line = Table('%(reduction)s' % 
-                                 {'reduction':reduction.type,
-                                  'discretization':discretization.type},
-                                 data_mean['pre_data'],
-                                 data_mean['pos_data'],
-                )
-                datas.append(line)
-                
-        return datas
-
-        
-        
-        
-        
-    
-    
-    
-'''
-    
-
-class RollingMean(BaseStats):
-    def update_informations(self,discretization_code=None,reduction_id=None):
-        if discretization_code is None:
-            self.discretizations=Discretization.objects.all()
-            self.discretizations=[d for d in self.discretizations if d.type_en_us.endswith("rolling mean")]
-        else:
-            self.discretizations = Discretization.objects.filter(pandas_code=discretization_code)
-        if reduction_id==None:
-            self.reductions =Reduction.objects.all()
-        else:
-            self.reductions = Reduction.objects.filter(id=reduction_id)
-    def reduce(self,daily,discretization,reduction):
-        daily_rolling_mean = daily.rolling(window=int(discretization.pandas_code),center=False).mean()
-        hydrologic_years = self.hydrologic_years_dict(daily_rolling_mean)
-        gp = pd.Grouper(freq="10AS")
-        years = sorted(list(hydrologic_years.keys())[1:])
-        data = [hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]).max()
-                 for year in years if not hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]) is (nan)]
-        date = [hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]).idxmax()
-                 for year in years  if not hydrologic_years[year].groupby(gp).agg(funcoes_reducao[reduction.type_pt_br]) is (nan)]
-        return date,data
-    
-'''    
-    
-    
-    
-    
-    
- 
-    
-    
-'''    
-class RazaoMudanca(BaseEcoHidro):
-    def atualiza_informacoes(self,variavel_id,reducao_id):
-        self.discretizacao = Discretizacao.objects.get(codigo_pandas="AS")
-        self.reducao = Reducao.objects.get(id=reducao_id)
-        
-    def prepara_serie_reduzida(self):
-        temporais = SerieTemporal.objects.filter(Id=self.original.serie_temporal_id)
-        diarios = self.cria_dados_diarios_pandas(temporais)
-        anos_hidrologicos = self.dicionario_de_anos_hidrologicos(diarios)
-        anos = sorted(list(anos_hidrologicos.keys()))
-        dados = []
-        for ano in anos:
-            df = anos_hidrologicos[ano]
-            df=pd.DataFrame({'dado':df.values},index=df.index)
-            df['dif'] = df['dado'] - df['dado'].shift(1)
-            r = df[df['dif']>0]['dif'].mean()
-            print(r)
-            dados.append(float(r))
-        datas = [datetime(ano,1,1) for ano in anos]
-        return self.obtem_dados_temporais(dados,datas)
-    
-    
-class FrequenciaMudanca(BaseEcoHidro):
-    def atualiza_informacoes(self,reducao_id):
-        self.discretizacao = Discretizacao.objects.get(codigo_pandas="AS")
-        self.reducao = Reducao.objects.get(id=reducao_id)
-        
-    def prepara_serie_reduzida(self):
-        temporais = SerieTemporal.objects.filter(Id=self.original.serie_temporal_id)
-        diarios = self.cria_dados_diarios_pandas(temporais)
-        anos_hidrologicos = self.dicionario_de_anos_hidrologicos(diarios)
-        anos = sorted(list(anos_hidrologicos.keys()))
-        dados = []
-        for ano in anos:
-            df = anos_hidrologicos[ano]
-            df=pd.DataFrame({'dado':df.values},index=df.index)
-            df['dif_unit'] = (df['dado'] - df['dado'].shift(1))/abs(df['dado'] - df['dado'].shift(1))
-            events = np.split(a['dif'], np.where(a['dif']>a['dif'].shift(1))[0])
-            r = len(events)
-            dados.append(float(r))
-        datas = [datetime(ano,1,1) for ano in anos]
-        return self.obtem_dados_temporais(dados,datas)
-        
-        
-'''

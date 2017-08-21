@@ -95,7 +95,7 @@ def station_information(request,**kwargs):
             data=form.cleaned_data
             url = furl("")
             url.args = {'variable':data['variable'],'discretization':data['discretization']}
-            return HttpResponseRedirect("/%s/stats/%s/%s/%s"%(get_language(),valid_stats[0].short_name,kwargs['station_id'],url.url.replace("?","")))
+            return HttpResponseRedirect("/%s/stats/%s/%s/%s/10"%(get_language(),valid_stats[0].short_name,kwargs['station_id'],url.url.replace("?","")))
     stats = get_stats_list(request,variables)  
     return render(request,'station_information.html',{'BASE_URL':"",'sources':info.sources,
                                                       'originals':info.originals,
