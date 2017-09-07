@@ -9,16 +9,81 @@ from django.utils.translation import get_language,gettext as _
 
 from data.models import Discretization,Unit,Variable,ConsistencyLevel,OriginalSerie,TemporalSerie
 from data.graphs import plot_web
-from stats.forms import RollingMeanForm,BasicStatsForm,RateFrequencyOfChangeForm,IHAForm
+#from stats.forms import RollingMeanForm,BasicStatsForm,RateFrequencyOfChangeForm,IHAForm
 from .utils import Stats
 
 from .forms import CreateStationForm
 from .models import Station, Source, StationType, Localization,Coordinate
 from .reads_data import ANA,ONS,Chesf
-from .utils import StationInfo,get_stats_list
+from .utils import StationInfo,get_all_stats_form_list,get_stats_list
 
 from plotly.graph_objs import *
 from plotly.offline import plot
+
+
+
+
+
+
+
+
+from django.views import View
+
+class StationInformation(View):
+    context = {"BASE_URL":""}
+    
+    def get_filters(self,filters):
+        return furl("?"+filters).args
+    def get_info_and_variables(self,station_id,filters):
+        info = StationInfo(station_id,filters.get('variavel_id',None))
+        info.get_originals_graphs_and_temporals()
+        variables=[(variable.id,variable.variable) for variable in info.variables]
+        self.context['sources']=info.sources
+        self.context['originals']=info.originals
+        self.context['station']=info.originals[0].station
+        self.context['variables']=variables
+        
+        
+    def get(self, request, *args, **kwargs):
+        filters = self.get_filters(kwargs['filters'])
+        self.get_info_and_variables(kwargs['station_id'],filters)
+        self.context['stats'] = get_stats_list(request,self.context['variables'])  
+        self.context['all_stats'] = all_stats = get_all_stats_form_list()
+        return render(request,'station_information.html',self.context)
+    
+    
+    
+    def post(self, request, *args, **kwargs):
+        filters = self.get_filters(kwargs['filters'])
+        self.get_info_and_variables(kwargs['station_id'],filters)
+        stats = get_stats_list(request,self.context['variables'])
+        valid_stats = [stat for stat in stats if stat.form.is_valid()]
+        if len(valid_stats)>0:
+            form = valid_stats[0].form
+            data=form.cleaned_data
+            url = furl("")
+            keys = {
+                'variable':data.get('variable',None),'discretization':data.get('discretization',None),
+                'start_year':data.get("initial",None),'end_year':data.get("final",None)
+                       }
+            keys = {key:value for key,value in keys.items() if not value is None}
+            url.args = keys
+            if valid_stats[0].short_name == "iha":
+                
+                return HttpResponseRedirect("/%s/stats/iha/%s/%s/%s"%(get_language(),kwargs['station_id'],data['station'],url.url.replace("?","")))
+                                            
+            else:
+                                            
+                return HttpResponseRedirect("/%s/stats/%s/%s/%s"%(get_language(),valid_stats[0].short_name,kwargs['station_id'],url.url.replace("?","")))
+        return self.get(request, *args, **kwargs)
+    
+    
+
+
+
+
+
+
 
         
 @login_required
@@ -94,13 +159,15 @@ def station_information(request,**kwargs):
             form = valid_stats[0].form
             data=form.cleaned_data
             url = furl("")
-            url.args = {'variable':data['variable'],'discretization':data['discretization']}
-            return HttpResponseRedirect("/%s/stats/%s/%s/%s/10"%(get_language(),valid_stats[0].short_name,kwargs['station_id'],url.url.replace("?","")))
+            url.args = {'variable':data['variable'],'discretization':data.get('discretization',None)}
+            return HttpResponseRedirect("/%s/stats/%s/%s/%s"%(get_language(),valid_stats[0].short_name,kwargs['station_id'],url.url.replace("?","")))
     stats = get_stats_list(request,variables)  
+    all_stats = get_all_stats_form_list()
     return render(request,'station_information.html',{'BASE_URL':"",'sources':info.sources,
                                                       'originals':info.originals,
                                                       'station':info.originals[0].station,
                                                       'stats':stats,
+                                                      'all_stats':all_stats,
                                                       'variables':variables,
                                                      })
 

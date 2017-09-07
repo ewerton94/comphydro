@@ -4,7 +4,7 @@ from django.http import HttpResponse,HttpResponseRedirect
 from django.shortcuts import render
 
 from data.graphs import plot_web
-from stations.utils import StationInfo,get_stats_list
+from stations.utils import StationInfo,get_stats_list,get_all_stats_form_list
 from stations.models import Station, Source, StationType, Localization,Coordinate
 from data.models import Variable
 from datetime import datetime
@@ -70,14 +70,15 @@ class StatsView():
         return render(self.request,'stats_information.html',{'BASE_URL':"",'sources':basic_stats.sources,
                                                           'reduceds':basic_stats.reduceds,
                                                           'station':basic_stats.station,
-                                                          'stats':get_stats_list(self.request,[]),
+                                                          'all_stats':get_all_stats_form_list(),
                                                              'aba':"_".join(stats_name.split()),
                                                   
                                                     
                                                          })
         
 
-def basic_stats(request,**kwargs):
+def basic_stats(request,price_min=None,**kwargs):
+    print(price_min)
     stats = StatsView(request,BasicStats)
     return stats.get_data(kwargs['station_id'],'basic stats',kwargs['filters'])
 

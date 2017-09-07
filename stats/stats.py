@@ -7,7 +7,7 @@ from data.models import Discretization,Unit,Variable,ConsistencyLevel,OriginalSe
 from data.graphs import plot_web,plot_polar
 from stations.reads_data import get_id_temporal,criar_temporal
 from stations.models import Station
-from stations.utils import StationInfo
+from stations.utils import StationInfo,get_daily_from_temporal
 from .models import Reduction,ReducedSerie,RollingMeanSerie
         
 funcoes_reducao = {'máxima':max,'mínima':min,'soma':sum, 'média':mean,'máxima média móvel':argmax,
@@ -17,7 +17,6 @@ meses = {1:"JAN",2:"FEB",3:"MAR",4:"APR",5:"MAY",6:"JUN",7:"JUL",8:"AUG",9:"SEP"
 
 reduction_abreviations = {'maximum':'max','minimum':'min'}
 
-
 def get_originals(variables,originals):
     os=[]
     for variable in variables:
@@ -26,6 +25,13 @@ def get_originals(variables,originals):
         os.append([o for o in originals_by_variable if o.consistency_level.type_en_us == cl_data_type][0])
     return os
 
+def get_daily_data(station,variable,start_year=None,end_year=None):
+    originals = OriginalSerie.objects.filter(station=station)
+    originals=get_originals([variable,],originals)
+    temporals = TemporalSerie.objects.filter(id=originals[0].temporal_serie_id)
+    return get_daily_from_temporal(temporals,start_year,end_year)
+
+
 
 class Table:
     def __init__(self,title,pre_data,pos_data):
@@ -33,7 +39,10 @@ class Table:
         self.pre_data=pre_data
         self.pos_data=pos_data
         self.deviation_magnitude = pos_data-pre_data
-        self.percent = int(self.deviation_magnitude/pre_data*100)
+        if pre_data==0:
+            self.percent=-100
+        else:
+            self.percent = int(self.deviation_magnitude/pre_data*100)
         
     def __str__(self):
         return str(self.title)+"  -  "+str(self.value)
@@ -132,6 +141,7 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
         graph.xys = xys
         graph.names=names
         return graph,names
+    
     def create_graph(self,xys,variable,unit,discretization,names):
         '''
         This method is responsible to return the graph. To change the graph.
@@ -205,6 +215,7 @@ class RollingMean(BaseStats):
 
 
 class ReferenceFlow(BaseStats):
+    
     plot_permancence_curve=True
     
     def get_permancence_curve_data(self,daily):
@@ -214,8 +225,8 @@ class ReferenceFlow(BaseStats):
     
     def get_parameters(self,daily,reduction,parameters):
         parameters['Q50'] = daily.quantile(q=0.5, numeric_only=True).values[0]
-        parameters['Q90']=daily.quantile(q=0.1, numeric_only=True).values[0]
-        parameters['Qbase']=parameters['Q90']/parameters['Q50']
+        parameters['Q90'] = daily.quantile(q=0.1, numeric_only=True).values[0]
+        parameters['Qbase'] = parameters['Q90']/parameters['Q50']
         
     def reduce(self,daily,discretization,reduction):
         daily['month']=[o.month for o in daily.index]
@@ -229,6 +240,7 @@ class ReferenceFlow(BaseStats):
 class BaseAnnualEvents(BaseStats,metaclass=ABCMeta):
     
     calculate_limiar=False
+    
     @abstractmethod
     def get_reduced_value(self,df,reduction):
         pass
@@ -351,15 +363,7 @@ class JulianDate(BaseAnnualEvents):
 
 
     
-def get_daily_data(station,variable):
-    originals = OriginalSerie.objects.filter(station=station)
-    originals=get_originals([variable,],originals)
-    temporals = TemporalSerie.objects.filter(id=originals[0].temporal_serie_id)
-    data = [o.data if not o is None else nan for o in temporals]
-    date = [o.date for o in temporals]
-    df = pd.DataFrame({"data" : data}, index=pd.DatetimeIndex(date))
-    gp = pd.Grouper(freq='D',sort=True)
-    return df.groupby(gp).mean()
+
  
     
     
@@ -408,18 +412,12 @@ class IHA:
             self.variable = Variable.objects.get(variable_en_us="flow")
         else:
             self.variable = Variable.objects.get(id=variable)
-        pre=get_daily_data(self.station,self.variable)
-        pos=get_daily_data(self.other,self.variable)
-        if start_year is None and end_year is None:
-            pre=pre[pre.index.year>=1995]
-            pre=pre[pre.index.year<=2012]
-            pos=pos[pos.index.year>=1995]
-            pos=pos[pos.index.year<=2012]
+        pre=get_daily_data(self.station,self.variable,int(start_year),int(end_year))
+        pos=get_daily_data(self.other,self.variable,int(start_year),int(end_year))
+        #pre=get_daily_data(self.station,self.variable,start_year,end_year)
+        #pos=get_daily_data(self.other,self.variable,start_year,end_year)
             
-            
-        self.daily = {'pre_data':pre,
-                      'pos_data':pos
-                     }
+        self.daily = {'pre_data':pre,'pos_data':pos}
         self.annual_discretization = Discretization.objects.get(type_en_us="annual")
         discretizations = list(Discretization.objects.filter(stats_type__type = 'rolling mean'))
         discretizations.sort(key=lambda x:int(x.pandas_code))

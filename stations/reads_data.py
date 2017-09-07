@@ -22,6 +22,20 @@ Series = [OriginalSerie,]
           
 cl={1:'raw',2:'consisted'}      
           
+
+    
+    
+import xlrd
+from datetime import datetime
+
+def xlread(arq_xls):
+	"""Função que ler arquivos .xls"""
+	xls = xlrd.open_workbook(arq_xls)
+	plan = xls.sheets()[0]
+	for i in range(plan.nrows):
+		yield plan.row_values(i)
+    
+
 def mes_em_numero(string):
     """CRIA O DATAFRAME DATAS - VAZÕES"""
     mes_num = {"jan":"1","fev":"2","mar":"3","abr":"4","mai":"5","jun":"6","jul":"7","ago":"8","set":"9","out":"10","nov":"11","dez":"12"}
@@ -60,7 +74,7 @@ def criar_temporal(dados,datas):
     return id
 
 def cria_serie_original(dados,datas,posto,variable,nivel_consistencia):
-    """Cria a série Original a partir de um DataFrame"""
+    """Create a Original Serie from DataFrame"""
     id = criar_temporal(dados,datas)
     print("Criando Série Original para a temporal de ID: "+str(id))
     o = OriginalSerie.objects.create(
@@ -75,38 +89,31 @@ def cria_serie_original(dados,datas,posto,variable,nivel_consistencia):
     return o
 
 
-class Base(metaclass=ABCMeta):
+
+
+class BaseSource(metaclass=ABCMeta):
+    """This class is the base from Sources. To implement new sources, create a new child class from this one."""
+    
     @abstractmethod
     def le_dados(self,temp_dir):
+        '''This method should return a DataFrame object.'''
         pass
     
     @abstractmethod
     def obtem_nome_e_localizacao_posto(self,estacao):
+        '''This method should return a tuple (<'str' name>, <'Localization object' localization>, <'boolean' error>)'''
         pass
     
     @abstractmethod
     def executar(self,posto,variavel):
+        '''This method should create the original series in the database.'''
         pass
     
     
 
-    
-    
-    
-import xlrd
-from datetime import datetime
-
-def xlread(arq_xls):
-	"""Função que ler arquivos .xls"""
-	xls = xlrd.open_workbook(arq_xls)
-	plan = xls.sheets()[0]
-	for i in range(plan.nrows):
-		yield plan.row_values(i)
 
 
-
-
-class Chesf(Base):
+class Chesf(BaseSource):
     def le_dados(self,temp_dir):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         aux=''
@@ -154,7 +161,7 @@ class Chesf(Base):
         print ('** %s ** (concluído)' % (posto.code,))
 
 
-class ONS(Base):
+class ONS(BaseSource):
     def le_dados(self,temp_dir):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         planilha=pd.read_excel(os.path.join(dir_path,"Vazões_Diárias_1931_2015.xls"),skiprows=7,header=None)
@@ -187,7 +194,7 @@ class ONS(Base):
         cria_serie_original(df.values,df.index,posto,variavel,cl[1])
         print ('** %s ** (concluído)' % (posto.code,))
 
-class ANA(Base):
+class ANA(BaseSource):
 
     url_estacao = 'http://hidroweb.ana.gov.br/Estacao.asp?Codigo={0}&CriaArq=true&TipoArq={1}'
     url_arquivo = 'http://hidroweb.ana.gov.br/{0}'

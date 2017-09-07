@@ -3,6 +3,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from stations.models import Station, Source, StationType, Localization,Coordinate
 
+
+
 class TemporalSerie(models.Model):
     Id = models.AutoField(primary_key=True)
     id = models.IntegerField(unique=False)

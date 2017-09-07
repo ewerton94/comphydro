@@ -9,7 +9,7 @@ from django.utils.translation import get_language,gettext as _
 
 from data.models import Discretization,Unit,Variable,ConsistencyLevel,OriginalSerie,TemporalSerie
 from data.graphs import plot_web
-from stats.forms import RollingMeanForm,BasicStatsForm,RateFrequencyOfChangeForm
+from stats.forms import GenericStatsForm,IHAForm,AnnualStatsForm
 #from stats.stats import Stats
 
 from .forms import CreateStationForm
@@ -17,25 +17,78 @@ from .models import Station, Source, StationType, Localization,Coordinate
 from .reads_data import ANA,ONS
 
 
+def get_daily_from_temporal(temporals,start_year=None,end_year=None):
+    data = [o.data if not o is None else nan for o in temporals]
+    date = [o.date for o in temporals]
+    df = pd.DataFrame({"data" : data}, index=pd.DatetimeIndex(date))
+    gp = pd.Grouper(freq='D',sort=True)
+    df = df.groupby(gp).mean()
+    if not start_year is None:
+        df = df[df.index.year>=start_year]
+    if not end_year is None:
+        df = df[df.index.year<=end_year]
+    return df
+
+
 class Stats(object):
-    def __init__(self,request,name,short_name,variables,form):
+    def __init__(self,request,name,short_name,variables,form,stats=None):
         data = request.POST if short_name in request.POST else None
         self.name = name        
-        self.form=form(variables=variables,data=data,prefix=short_name)
+        if stats is None:
+            self.form=form(variables=variables,stats_type=" ".join(short_name.split("_")),data=data,prefix=short_name)
+        else:
+            self.form=form(variables=variables,stats_list=stats,data=data,prefix=short_name)
         self.short_name=short_name
         
-def get_stats_list(request,variables):
+annual_stats_strings = {
+                         'rate_of_change':_("Rate of change"),
+                         'reference_flow':_("Reference Flow"),
+                         'frequency_of_change':_("Frequency of change"),
+                         'julian_date':_("Julian Date"),
+                         'pulse_count':_("Pulse Count"),
+                         'pulse_duration':_("Pulse Duration"),
+
+                }
+
+basic_stats_strings = {
+                'basic_stats':_("Basic Stats"),
+}
+
+rolling_mean_stats_strings = {
+                'rolling_mean':_("Rolling Mean"),
+                         
+}
+
+
+
+
+
+def get_specific_stats(request,variables):
     return [
-            Stats(request,_("Rolling Mean"),'rolling_mean',variables,RollingMeanForm),
-            Stats(request,_("Basic Stats"),'basic_stats',variables,BasicStatsForm),
-            Stats(request,_("Rate of change"),'rate_of_change',variables,RateFrequencyOfChangeForm),
-            Stats(request,_("Frequency of change"),'frequency_of_change',variables,RateFrequencyOfChangeForm),
-            Stats(request,_("Indicators of Hydrologic Alterations"),'iha',variables,RateFrequencyOfChangeForm),
-            Stats(request,_("Julian Date"),'julian_date',variables,RateFrequencyOfChangeForm),
-            Stats(request,_("Pulse Count"),'pulse_count',variables,RateFrequencyOfChangeForm),
-            Stats(request,_("Pulse Duration"),'pulse_duration',variables,RateFrequencyOfChangeForm),
-            Stats(request,_("Reference Flow"),'reference_flow',variables,RateFrequencyOfChangeForm),
-        ]
+        Stats(request,_("Indicators of Hydrologic Alterations"),'iha',variables,IHAForm),
+    ]
+
+list_all_stats = [basic_stats_strings,rolling_mean_stats_strings,annual_stats_strings,{'iha':"IHA"}]
+
+def get_all_stats_form_list():
+    all_stats={}
+    for data_stats in list_all_stats:
+        for key,value in data_stats.items():
+            all_stats[key]=value
+    return ((key,all_stats[key]) for key in all_stats)
+
+
+def get_annual_stats_form_list():
+    return ((key,annual_stats_strings[key]) for key in annual_stats_strings)
+
+        
+def get_stats_list(request,variables):
+    l = []
+    l.extend([Stats(request,basic_stats_strings[key],key,variables,GenericStatsForm) for key in basic_stats_strings])
+    l.extend([Stats(request,rolling_mean_stats_strings[key],key,variables,GenericStatsForm) for key in rolling_mean_stats_strings])
+    #l.append(Stats(request,_("Annual Statistics"),"annual_stats",variables,AnnualStatsForm,get_annual_stats_form_list()))
+    l.extend(get_specific_stats(request,variables))
+    return l
 
 class StationInfo(object):
     def __init__(self,station_id,*variables):
@@ -59,11 +112,7 @@ class StationInfo(object):
         return self.originals,self.variables,self.sources
     def create_daily_data_pandas(self,temporals):
         self.temporals = temporals
-        data = [o.data if not o is None else nan for o in temporals]
-        date = [o.date for o in temporals]
-        pf = pd.DataFrame({"data" : data}, index=pd.DatetimeIndex(date))
-        gp = pd.Grouper(freq='D',sort=True)
-        self.daily_data = pf.groupby(gp).mean()
+        self.daily_data = get_daily_from_temporal(temporals)
         return self.daily_data
     def create_graph(self,xys,variable,unit):
         return plot_web(xys=xys,
