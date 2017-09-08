@@ -8,7 +8,7 @@ from django.shortcuts import render, get_object_or_404
 from django.utils.translation import get_language,gettext as _
 
 from data.models import Discretization,Unit,Variable,ConsistencyLevel,OriginalSerie,TemporalSerie
-from data.graphs import plot_web
+from data.graphs import plot_web,plot_map
 #from stats.forms import RollingMeanForm,BasicStatsForm,RateFrequencyOfChangeForm,IHAForm
 from .utils import Stats
 
@@ -16,9 +16,6 @@ from .forms import CreateStationForm
 from .models import Station, Source, StationType, Localization,Coordinate
 from .reads_data import ANA,ONS,Chesf
 from .utils import StationInfo,get_all_stats_form_list,get_stats_list
-
-from plotly.graph_objs import *
-from plotly.offline import plot
 
 
 
@@ -69,7 +66,6 @@ class StationInformation(View):
             keys = {key:value for key,value in keys.items() if not value is None}
             url.args = keys
             if valid_stats[0].short_name == "iha":
-                
                 return HttpResponseRedirect("/%s/stats/iha/%s/%s/%s"%(get_language(),kwargs['station_id'],data['station'],url.url.replace("?","")))
                                             
             else:
@@ -123,53 +119,17 @@ def create_station(request):
 
 
 def stations(request):
-    mpt='pk.eyJ1IjoiYWRlbHNvbmpyIiwiYSI6ImNqNTV0czRkejBnMnkzMnBtdXdsbmRlbDcifQ.Ox8xbLTD_cD7h3uEz13avQ'
     lat,lon,text=[],[],[]
-    stations_ = Station.objects.all()
+    station_list = Station.objects.all()
     context={'BASE_URL':"",'stations':stations}
-    if stations_:
-        for station in stations_:
+    if station_list:
+        for station in station_list:
             text.append('<a href="/%s/stations/%d/information">%s</a>'%(get_language(),station.id,station))
             lat.append(station.localization.coordinates.y)
             lon.append(station.localization.coordinates.x)
 
-        data=Data([Scattermapbox(lat=lat,lon=lon,mode='markers',marker=Marker(size=14,color='rgb(0, 50, 40)'),text=text,)])
-        layout=Layout(autosize=True,margin=Margin(l=0,r=0,b=0,t=0,pad=0),hovermode='closest',mapbox=dict(accesstoken=mpt,bearing=0,center=dict(lat=float(lat[0]),lon=float(lon[0])),pitch=0,zoom=7,),)
-        fig=dict(data=data,layout=layout)
-
-        div=plot(fig, auto_open=False, output_type='div')
-        context['graph'] = div
+        context['graph'] = plot_map(lat,lon,text)
     
-    return render(request,'stations.html',context)          
- 
-
-    
-
-def station_information(request,**kwargs):
-    filtros = furl("?"+kwargs['filters']).args
-    if 'file' in filtros:
-        return HttpResponse("FILE")
-    info = StationInfo(kwargs['station_id'],filtros.get('variavel_id',None))
-    info.get_originals_graphs_and_temporals()
-    variables=[(variable.id,variable.variable) for variable in info.variables]
-    if request.method=="POST":
-        stats = get_stats_list(request,variables)
-        valid_stats = [stat for stat in stats if stat.form.is_valid()]
-        if len(valid_stats)>0:
-            form = valid_stats[0].form
-            data=form.cleaned_data
-            url = furl("")
-            url.args = {'variable':data['variable'],'discretization':data.get('discretization',None)}
-            return HttpResponseRedirect("/%s/stats/%s/%s/%s"%(get_language(),valid_stats[0].short_name,kwargs['station_id'],url.url.replace("?","")))
-    stats = get_stats_list(request,variables)  
-    all_stats = get_all_stats_form_list()
-    return render(request,'station_information.html',{'BASE_URL':"",'sources':info.sources,
-                                                      'originals':info.originals,
-                                                      'station':info.originals[0].station,
-                                                      'stats':stats,
-                                                      'all_stats':all_stats,
-                                                      'variables':variables,
-                                                     })
-
+    return render(request,'stations.html',context)
 
 

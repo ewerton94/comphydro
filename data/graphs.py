@@ -1,5 +1,5 @@
 from plotly.offline import plot
-from plotly.graph_objs import Scatter, Figure, Layout
+from plotly.graph_objs import *
 
 from django.shortcuts import render
 from django.http import HttpResponse
@@ -24,6 +24,7 @@ def plot_web(xys,title,variable,unit,names=[],xaxis_title=_('time')):
 def home(request):
     return render(request,'home.html',{})
 
+no_margin=Margin(l=0,r=0,b=0,t=0,pad=0)
 
 
 def plot_polar(xys,title,variable,unit,names=[]):
@@ -40,3 +41,15 @@ def plot_polar(xys,title,variable,unit,names=[]):
     #fig=go.Figure(data=data,layout=layout)
     #div=plot(fig,auto_open=False, output_type='div')
     #return div
+def plot_map(lat,lon,text):
+    mpt='pk.eyJ1IjoiYWRlbHNvbmpyIiwiYSI6ImNqNTV0czRkejBnMnkzMnBtdXdsbmRlbDcifQ.Ox8xbLTD_cD7h3uEz13avQ'
+    data=Data([Scattermapbox(lat=lat,lon=lon,mode='markers',marker=Marker(size=14,color='rgb(0, 50, 40)'),text=text,)])
+    layout=Layout(
+        autosize=True,margin=no_margin,hovermode='closest',
+        mapbox=dict(accesstoken=mpt,bearing=0,
+                    center=dict(lat=float(lat[0]),
+                                lon=float(lon[0])),
+                    pitch=0,zoom=7,),)
+    fig=dict(data=data,layout=layout)
+
+    return plot(fig, auto_open=False, output_type='div')
