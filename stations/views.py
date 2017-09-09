@@ -19,14 +19,11 @@ from .utils import StationInfo,get_all_stats_form_list,get_stats_list
 
 
 
-
-
-
-
-
 from django.views import View
 
 class StationInformation(View):
+    '''This class '''
+    
     context = {"BASE_URL":""}
     
     def get_filters(self,filters):
@@ -65,6 +62,8 @@ class StationInformation(View):
                        }
             keys = {key:value for key,value in keys.items() if not value is None}
             url.args = keys
+            
+            #Differents forms
             if valid_stats[0].short_name == "iha":
                 return HttpResponseRedirect("/%s/stats/iha/%s/%s/%s"%(get_language(),kwargs['station_id'],data['station'],url.url.replace("?","")))
                                             

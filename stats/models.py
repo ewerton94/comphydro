@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from data.models import Discretization,OriginalSerie,TemporalSerie,Stats
@@ -18,6 +19,7 @@ class ReducedSerie(models.Model):
     discretization = models.ForeignKey(Discretization,verbose_name = _('discretization'))
     reduction = models.ForeignKey(Reduction,verbose_name = _('reduction'))
     temporal_serie_id = models.IntegerField(verbose_name = _('temporal serie id'))
+    limiar=models.FloatField(null=True,verbose_name = _('limiar'))
     class Meta:
         verbose_name_plural = _("Reduced Series")
         verbose_name = _("Reduced Serie")

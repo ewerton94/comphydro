@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from six import add_metaclass
 import pandas as pd
 from numpy import nan,mean,argmax,argmin,where,split,std
 from datetime import datetime
@@ -53,7 +55,9 @@ class generic_obj:
 def get_available_variables(station):
     return [o.variable for o in OriginalSerie.objects.filter(station=station)]
 
-class BaseStats(StationInfo,metaclass=ABCMeta):
+
+@add_metaclass(ABCMeta)
+class BaseStats(StationInfo):
     plot_daily=False
     plot_permancence_curve=False
     def get_parameters(self,temporal_data,reduction,parameters):
@@ -100,13 +104,30 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
         print(df)'''
         return annual_dic
     
-    def get_reduced_serie(self,original,discretization,reduction):
+    def get_reduced_serie(self,original,discretization,reduction,limiar=None):
         return ReducedSerie.objects.filter(
-                original_serie = original,discretization=discretization,reduction=reduction)
+                original_serie = original,discretization=discretization,reduction=reduction,limiar=limiar)
     
     @abstractmethod
     def reduce(self):
         pass
+    
+    def get_or_create_reduced_data(self,daily,original,discretization,reduction,limiar=None,median=None,start_year=0,end_year=9999):
+        reduced=self.get_reduced_serie(
+            original,discretization,reduction,limiar)
+        if reduced:
+            temporal_data = TemporalSerie.objects.filter(
+                id=reduced[0].temporal_serie_id)
+            reduced=reduced[0]
+        else:
+            date,data=self.reduce(daily,discretization,reduction,limiar,median)
+            temporal_data,reduced=self.get_temporal_data(
+                original,discretization,reduction,data,date,limiar)
+        reduced.temporals=[t for t in temporal_data if start_year<=t.date.year<=end_year]
+        date=[t.date for t in reduced.temporals]
+        data=[t.data for t in reduced.temporals]
+        return reduced,date,data
+        
     
     def get_graphs_data(self,daily,original,discretization):
         graph=generic_obj()
@@ -114,22 +135,9 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
         xys=[]
         graph.parameters={}
         for reduction in self.reductions:
-            reduced=self.get_reduced_serie(
-                original,discretization,reduction)
-            if reduced:
-                temporal_data = TemporalSerie.objects.filter(
-                    id=reduced[0].temporal_serie_id)
-                reduced=reduced[0]
-                reduced.temporals=temporal_data
-            else:
-                date,data=self.reduce(daily,discretization,reduction)
-                temporal_data,reduced=self.get_temporal_data(
-                    original,discretization,reduction,data,date)
-                reduced.temporals=temporal_data
             self.get_parameters(daily,reduction,graph.parameters)
+            reduced,x,y = self.get_or_create_reduced_data(daily,original,discretization,reduction)
             reduceds.append(reduced)
-            x=[t.date for t in reduced.temporals]
-            y=[t.data for t in reduced.temporals]
             xys.append([x,y])
         names=[r.type for r in self.reductions]
         if self.plot_daily:
@@ -175,20 +183,21 @@ class BaseStats(StationInfo,metaclass=ABCMeta):
         self.reduceds = graphs
         return self.reduceds
     
-    def get_temporal_data(self,original,discretization,reduction,dados,datas):
+    def get_temporal_data(self,original,discretization,reduction,dados,datas,limiar=None):
         id = criar_temporal(dados,datas)
         reduced_serie = ReducedSerie.objects.create(
                 original_serie = original,
                 discretization = discretization,
                 reduction = reduction,
-                temporal_serie_id = id
+                temporal_serie_id = id,
+            limiar=limiar
         )
         reduced_serie.save()
         return TemporalSerie.objects.filter(id=id),reduced_serie
     
 class BasicStats(BaseStats):
     plot_daily=True
-    def reduce(self,daily,discretization,reduction):
+    def reduce(self,daily,discretization,reduction,limiar=None,median=None):
         gp = pd.Grouper(freq=discretization.pandas_code)
         discretized = daily.groupby(gp).agg(funcoes_reducao[reduction.type_pt_br])
         discretized.index = pd.DatetimeIndex(
@@ -200,7 +209,7 @@ class BasicStats(BaseStats):
 
 class RollingMean(BaseStats):
     plot_daily=True
-    def reduce(self,daily,discretization,reduction):
+    def reduce(self,daily,discretization,reduction,limiar=None,median=None):
         daily_rolling_mean = daily.rolling(window=int(discretization.pandas_code),center=False).mean()
         hydrologic_years = self.hydrologic_years_dict(daily_rolling_mean,reduction.hydrologic_year_type)
         gp = pd.Grouper(freq="10AS")
@@ -228,16 +237,17 @@ class ReferenceFlow(BaseStats):
         parameters['Q90'] = daily.quantile(q=0.1, numeric_only=True).values[0]
         parameters['Qbase'] = parameters['Q90']/parameters['Q50']
         
-    def reduce(self,daily,discretization,reduction):
+    def reduce(self,daily,discretization,reduction,limiar=None,median=None):
         daily['month']=[o.month for o in daily.index]
         mean_by_month = daily.groupby('month').quantile(q=0.05, numeric_only=True)
         data = [d[0] for d in mean_by_month.values]
         date = [datetime(1900,m,1) for m in set(daily['month'].values)]
         return date,data
-    
-  
 
-class BaseAnnualEvents(BaseStats,metaclass=ABCMeta):
+    
+    
+@add_metaclass(ABCMeta)
+class BaseAnnualEvents(BaseStats):
     
     calculate_limiar=False
     
@@ -412,12 +422,15 @@ class IHA:
             self.variable = Variable.objects.get(variable_en_us="flow")
         else:
             self.variable = Variable.objects.get(id=variable)
-        pre=get_daily_data(self.station,self.variable,int(start_year),int(end_year))
-        pos=get_daily_data(self.other,self.variable,int(start_year),int(end_year))
-        #pre=get_daily_data(self.station,self.variable,start_year,end_year)
-        #pos=get_daily_data(self.other,self.variable,start_year,end_year)
-            
-        self.daily = {'pre_data':pre,'pos_data':pos}
+        self.start_year=int(start_year) if not start_year is None else 0
+        self.end_year=int(end_year) if not end_year is None else 9999
+        self.original = {
+            'pre_data':get_originals([self.variable,],OriginalSerie.objects.filter(station=self.station))[0],
+            'pos_data':get_originals([self.variable,],OriginalSerie.objects.filter(station=self.other))[0]}
+        self.daily = {}
+        for type_data in self.original:
+            temporals = TemporalSerie.objects.filter(id=self.original[type_data].temporal_serie_id)
+            self.daily[type_data] = get_daily_from_temporal(temporals,self.start_year,self.end_year)
         self.annual_discretization = Discretization.objects.get(type_en_us="annual")
         discretizations = list(Discretization.objects.filter(stats_type__type = 'rolling mean'))
         discretizations.sort(key=lambda x:int(x.pandas_code))
@@ -429,13 +442,15 @@ class IHA:
             for reduction in Reduction.objects.filter(stats_type__type = type_classe):
                 data_mean = {}
                 if calculate_limiar:
-                    limiar = get_limiar(self.daily['pre_data'],quantils[reduction.hydrologic_year_type])
-                    median = get_median(self.daily['pre_data'])
+                    daily = self.daily['pre_data']
+                    limiar = get_limiar(daily,quantils[reduction.hydrologic_year_type])
+                    median = get_median(daily)
                 else: 
                     limiar,median=None,None
-                for type_data in self.daily:
-                    stat = classes[type_classe](self.station.id,self.variable.id)
-                    date,data = stat.reduce(self.daily[type_data],discretization,reduction,limiar,median)
+                for type_data in self.original:
+                    stat = classes[type_classe](self.original[type_data].station.id,self.original[type_data].variable.id)
+                    reduced,date,data = stat.get_or_create_reduced_data(
+                        self.daily[type_data],self.original[type_data],discretization,reduction,limiar,median,self.start_year,self.end_year)
                     data_mean[type_data]=round(function_reduce(data),2)
                 line = Table(title % 
                                  {'reduction':reduction.type,
@@ -486,7 +501,8 @@ class IHA:
                 for type_data in self.daily:
                     daily_data = self.daily[type_data]
                     basic_stats = RollingMean(self.station.id,self.variable.id)
-                    date,data = basic_stats.reduce(daily_data,discretization,reduction)
+                    reduced,date,data = basic_stats.get_or_create_reduced_data(
+                        self.daily[type_data],self.original[type_data],discretization,reduction,None,None,self.start_year,self.end_year)
                     mean_=round(sum(data)/len(data),2)
                     xys.append([date,data])
                     names.append(type_data)
@@ -542,7 +558,8 @@ class IHA:
                 for type_data in self.daily:
                     daily_data = self.daily[type_data]
                     basic_stats = RollingMean(self.station.id,self.variable.id)
-                    date,data = basic_stats.reduce(daily_data,discretization,reduction)
+                    reduced,date,data = basic_stats.get_or_create_reduced_data(
+                        self.daily[type_data],self.original[type_data],discretization,reduction,None,None,self.start_year,self.end_year)
                     mean_=sum(data)/len(data)
                     std_ = std(data)
                     cv = std_/mean_

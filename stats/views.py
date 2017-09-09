@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from furl import furl
 
 from django.http import HttpResponse,HttpResponseRedirect
@@ -57,7 +58,7 @@ class StatsView():
         
     def get_data(self,station_id,stats_name,filters):
         filters = furl("?"+filters).args
-        basic_stats = self.Class(station_id,filters.get('variable'))
+        basic_stats = self.Class(station_id,filters.get('variable',None))
         basic_stats.update_informations(
             filters.get('discretization',None),
             filters.get('reduction',None),
@@ -148,10 +149,13 @@ def iha(request,**kwargs):
             
            )
     group1=g.Group1()
-    reference_flow,graph_rf=g.ReferenceFlow()
     group1cv=g.Group1cv()
-    group2,graphs2=g.Group2()
     group2cv,graphscv=g.Group2cv()
+    group2,graphs2=g.Group2()
+    '''
+    reference_flow,graph_rf=g.ReferenceFlow()
+    graphs2.append(graph_rf)
+    '''
     #Group 3 - Period of extremes
     classes={'julian date':JulianDate}
     group3=g.Group(classes)
@@ -166,7 +170,6 @@ def iha(request,**kwargs):
     group5cv=g.Group(classes,function_reduce=cv,calculate_limiar=True)
     #sources
     sources=set([g.station.source,g.other.source])
-    graphs2.append(graph_rf)
     return render(request,'iha.html',{'BASE_URL':"",'station':g.station,
                                                              'aba':"IHA",
                                       'sources':sources,
@@ -181,7 +184,8 @@ def iha(request,**kwargs):
                                            'group4cv':group4cv,
                                            'group5':group5,
                                            'group5cv':group5cv,
-                                      'graphs':graphs2,
-                                      'reference_flow':reference_flow,
+                                      #'graphs':graphs2,
+                                      #'reference_flow':reference_flow,
+                                      'all_stats':get_all_stats_form_list(),
                                                          })
     

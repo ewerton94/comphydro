@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from six import with_metaclass
 from abc import ABCMeta, abstractmethod
 from bs4 import BeautifulSoup
 import calendar
@@ -91,7 +93,7 @@ def cria_serie_original(dados,datas,posto,variable,nivel_consistencia):
 
 
 
-class BaseSource(metaclass=ABCMeta):
+class BaseSource(with_metaclass(ABCMeta)):
     """This class is the base from Sources. To implement new sources, create a new child class from this one."""
     
     @abstractmethod
