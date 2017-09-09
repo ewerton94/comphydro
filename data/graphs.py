@@ -6,6 +6,8 @@ from django.http import HttpResponse
 from django.utils.translation import gettext as _
 
 
+no_margin=Margin(l=0,r=0,b=0,t=0,pad=0)
+no_margin_with_padding=Margin(l=60,r=0,b=0,t=30,pad=0)
 
 def plot_web(xys,title,variable,unit,names=[],xaxis_title=_('time')):
     data=[Scatter(x=xy[0], y=xy[1]) for xy in xys]
@@ -15,7 +17,7 @@ def plot_web(xys,title,variable,unit,names=[],xaxis_title=_('time')):
     return plot({
                     'data':data,
         
-                    'layout':Layout(title=title,xaxis={'title':xaxis_title},yaxis={'title':"%s (%s)"
+                    'layout':Layout(title=title,margin=no_margin_with_padding,legend=dict(orientation="h"),xaxis={'title':xaxis_title},yaxis={'title':"%s (%s)"
                                                                                       %(str(variable),
                                                                                         str(unit))})
 
@@ -24,7 +26,6 @@ def plot_web(xys,title,variable,unit,names=[],xaxis_title=_('time')):
 def home(request):
     return render(request,'home.html',{})
 
-no_margin=Margin(l=0,r=0,b=0,t=0,pad=0)
 
 
 def plot_polar(xys,title,variable,unit,names=[]):
