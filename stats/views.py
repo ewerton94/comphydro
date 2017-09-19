@@ -5,7 +5,7 @@ from django.http import HttpResponse,HttpResponseRedirect
 from django.shortcuts import render
 
 from data.graphs import plot_web
-from stations.utils import StationInfo,get_stats_list,get_all_stats_form_list
+from stations.utils import StationInfo,get_stats_list,get_all_stats_form_list,get_annual_stats_form_list,get_standard_stats_form_list,get_specific_stats_form_list
 from stations.models import Station, Source, StationType, Localization,Coordinate
 from data.models import Variable
 from datetime import datetime
@@ -13,6 +13,8 @@ from datetime import datetime
 from .models import Reduction,ReducedSerie,RollingMeanSerie
 from .stats import BasicStats,RollingMean,RateOfChange,FrequencyOfChange,IHA,JulianDate,PulseCount,PulseDuration,ReferenceFlow,cv
 import pandas as pd
+from django.views import View
+
 
 def export_xls(reduceds,stats_name):
     import xlwt
@@ -76,64 +78,27 @@ class StatsView():
                                                   
                                                     
                                                          })
+  
+
+def stats_view(request,stats_name,**kwargs):
+    if stats_name in [e[0] for e in get_specific_stats_form_list()]:
+        return eval(stats_name)(request,**kwargs)
+    class_name = stats_name.title().replace("_","")
+    stats = StatsView(request,eval(class_name))
+    if stats_name in [e[0] for e in get_standard_stats_form_list()]:
+        return stats.get_data(kwargs['station_id'],stats_name.replace("_"," "),kwargs['filters'])
+    if stats_name in [e[0] for e in get_annual_stats_form_list()]:
+        if 'discretization' in kwargs['filters']:
+            kwargs['filters']=kwargs['filters'].split('discretization')[0]+"discretization=A"
+        else:
+            kwargs['filters']+="discretization=A"
+        return stats.get_data(kwargs['station_id'],stats_name.replace("_"," "),kwargs['filters'])
+    else:
+        return HttpResponse("Stats not found")
+    
+  
         
 
-def basic_stats(request,price_min=None,**kwargs):
-    print(price_min)
-    stats = StatsView(request,BasicStats)
-    return stats.get_data(kwargs['station_id'],'basic stats',kwargs['filters'])
-
-def rolling_mean(request,**kwargs):
-    stats = StatsView(request,RollingMean)
-    return stats.get_data(kwargs['station_id'],'rolling mean',kwargs['filters'])
-
-def rate_of_change(request,**kwargs):
-    stats = StatsView(request,RateOfChange)
-    if 'discretization' in kwargs['filters']:
-        kwargs['filters']=kwargs['filters'].split('discretization')[0]+"discretization=A"
-    else:
-        kwargs['filters']+="discretization=A"
-    return stats.get_data(kwargs['station_id'],'rate of change',kwargs['filters'])
-
-def frequency_of_change(request,**kwargs):
-    stats = StatsView(request,FrequencyOfChange)
-    if 'discretization' in kwargs['filters']:
-        kwargs['filters']=kwargs['filters'].split('discretization')[0]+"discretization=A"
-    else:
-        kwargs['filters']+="discretization=A"
-    return stats.get_data(kwargs['station_id'],'frequency of change',kwargs['filters'])
-
-def pulse_count(request,**kwargs):
-    stats = StatsView(request,PulseCount)
-    if 'discretization' in kwargs['filters']:
-        kwargs['filters']=kwargs['filters'].split('discretization')[0]+"discretization=A"
-    else:
-        kwargs['filters']+="discretization=A"
-    return stats.get_data(kwargs['station_id'],'pulse count',kwargs['filters'])
-
-def pulse_duration(request,**kwargs):
-    stats = StatsView(request,PulseDuration)
-    if 'discretization' in kwargs['filters']:
-        kwargs['filters']=kwargs['filters'].split('discretization')[0]+"discretization=A"
-    else:
-        kwargs['filters']+="discretization=A"
-    return stats.get_data(kwargs['station_id'],'pulse duration',kwargs['filters'])
-
-def julian_date(request,**kwargs):
-    stats = StatsView(request,JulianDate)
-    if 'discretization' in kwargs['filters']:
-        kwargs['filters']=kwargs['filters'].split('discretization')[0]+"discretization=A"
-    else:
-        kwargs['filters']+="discretization=A"
-    return stats.get_data(kwargs['station_id'],'julian date',kwargs['filters'])
-
-def reference_flow(request,**kwargs):
-    stats = StatsView(request,ReferenceFlow)
-    if 'discretization' in kwargs['filters']:
-        kwargs['filters']=kwargs['filters'].split('discretization')[0]+"discretization=A"
-    else:
-        kwargs['filters']+="discretization=A"
-    return stats.get_data(kwargs['station_id'],'reference flow',kwargs['filters'])
 
 
 
@@ -142,7 +107,7 @@ def iha(request,**kwargs):
     flow = Variable.objects.get(variable_en_us="flow")
     
     g = IHA(kwargs['station_id'],
-            kwargs['other_id'],
+            filters.get('other_id',kwargs['station_id']),
             filters.get('variable',flow.id),
             filters.get('start_year',None),
             filters.get('end_year',None),

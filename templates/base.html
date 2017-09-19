@@ -121,7 +121,7 @@
             
            
            {% for stat in all_stats %}
-            <li class="{% if aba == stat.0 %}active{% endif %}"><a href="{{ BASE_URL }}/{{ LANGUAGE_CODE }}/stats/{{ stat.0 }}/{{ station.id }}/10"><i class="fa fa-circle-o"></i>{{ stat.1 }}</a></li>
+            <li class="{% if aba == stat.0 %}active{% endif %}"><a href="{{ BASE_URL }}/{{ LANGUAGE_CODE }}/stats/{{ stat.0 }}/{{ station.id }}/other_id=10"><i class="fa fa-circle-o"></i>{{ stat.1 }}</a></li>
             {% endfor %}
           </ul>
         </li>

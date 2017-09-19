@@ -58,18 +58,13 @@ class StationInformation(View):
             url = furl("")
             keys = {
                 'variable':data.get('variable',None),'discretization':data.get('discretization',None),
-                'start_year':data.get("initial",None),'end_year':data.get("final",None)
+                'start_year':data.get("initial",None),'end_year':data.get("final",None),"other_id":data.get('station',None)
                        }
             keys = {key:value for key,value in keys.items() if not value is None}
             url.args = keys
             
-            #Differents forms
-            if valid_stats[0].short_name == "iha":
-                return HttpResponseRedirect("/%s/stats/iha/%s/%s/%s"%(get_language(),kwargs['station_id'],data['station'],url.url.replace("?","")))
                                             
-            else:
-                                            
-                return HttpResponseRedirect("/%s/stats/%s/%s/%s"%(get_language(),valid_stats[0].short_name,kwargs['station_id'],url.url.replace("?","")))
+            return HttpResponseRedirect("/%s/stats/%s/%s/%s"%(get_language(),valid_stats[0].short_name,kwargs['station_id'],url.url.replace("?","")))
         return self.get(request, *args, **kwargs)
     
     

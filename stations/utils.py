@@ -60,7 +60,7 @@ rolling_mean_stats_strings = {
 }
 
 
-
+specific_stats_strings={'iha':"IHA"}
 
 
 def get_specific_stats(request,variables):
@@ -68,7 +68,7 @@ def get_specific_stats(request,variables):
         Stats(request,_("Indicators of Hydrologic Alterations"),'iha',variables,IHAForm),
     ]
 
-list_all_stats = [basic_stats_strings,rolling_mean_stats_strings,annual_stats_strings,{'iha':"IHA"}]
+list_all_stats = [basic_stats_strings,rolling_mean_stats_strings,annual_stats_strings,specific_stats_strings]
 
 def get_all_stats_form_list():
     all_stats={}
@@ -78,8 +78,24 @@ def get_all_stats_form_list():
     return ((key,all_stats[key]) for key in all_stats)
 
 
+def get_standard_stats_form_list():
+    t=[]
+    for key,value in basic_stats_strings.items():
+        t.append((key,value))
+        
+    for key,value in rolling_mean_stats_strings.items():
+        t.append((key,value))
+        
+    return tuple(t)
+
+
+
+
 def get_annual_stats_form_list():
     return ((key,annual_stats_strings[key]) for key in annual_stats_strings)
+
+def get_specific_stats_form_list():
+    return ((key,specific_stats_strings[key]) for key in specific_stats_strings)
 
         
 def get_stats_list(request,variables):
