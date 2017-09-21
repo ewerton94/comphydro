@@ -33,74 +33,74 @@ def get_originals(variables, originals):
         os.append([o for o in originals_by_variable if o.consistency_level.type_en_us == cl_data_type][0])
     return os
 
-def get_daily_data(station, variable, start_year = None, end_year = None):
+def get_daily_data(station, variable, start_year=None, end_year=None):
     originals = OriginalSerie.objects.filter(station=station)
-    originals=get_originals([variable,],originals)
+    originals = get_originals([variable,], originals)
     temporals = TemporalSerie.objects.filter(id=originals[0].temporal_serie_id)
-    return get_daily_from_temporal(temporals,start_year,end_year)
+    return get_daily_from_temporal(temporals, start_year, end_year)
 
 class Table:
-    def __init__(self,title,pre_data,pos_data):
-        self.title=title
-        self.pre_data=pre_data
-        self.pos_data=pos_data
+    def __init__(self, title, pre_data, pos_data):
+        self.title = title
+        self.pre_data = pre_data
+        self.pos_data = pos_data
         self.deviation_magnitude = pos_data-pre_data
-        if pre_data==0:
-            self.percent=-100
+        if pre_data == 0:
+            self.percent =- 100
         else:
             self.percent = int(self.deviation_magnitude/pre_data*100)
-        
+
     def __str__(self):
         return str(self.title)+"  -  "+str(self.value)
 
 class generic_obj:
     pass
-        
+
 def get_available_variables(station):
     return [o.variable for o in OriginalSerie.objects.filter(station=station)]
 
 
 @add_metaclass(ABCMeta)
 class BaseStats(StationInfo):
-    plot_daily=False
-    plot_permancence_curve=False
-    def get_parameters(self,temporal_data,reduction,parameters):
+    plot_daily = False
+    plot_permancence_curve = False
+    def get_parameters(self, temporal_data, reduction, parameters):
         return {}
     
-    def update_informations(self,discretization_code=None,reduction_id=None,stats_type='standard'):
+    def update_informations(self, discretization_code=None, reduction_id=None, stats_type='standard'):
         if discretization_code is None:
-            discretizations=Discretization.objects.all()
-            discretizations=[d for d in discretizations if d.stats_type.type==stats_type]
+            discretizations = Discretization.objects.all()
+            discretizations = [d for d in discretizations if d.stats_type.type==stats_type]
             if not discretizations:
                 discretizations = Discretization.objects.filter(type_en_us='annual')
-            self.discretizations=discretizations
+            self.discretizations = discretizations
         else:
             self.discretizations = Discretization.objects.filter(pandas_code=discretization_code)
-        if reduction_id==None:
-            self.reductions =Reduction.objects.filter(stats_type__type=stats_type)
+        if reduction_id == None:
+            self.reductions = Reduction.objects.filter(stats_type__type=stats_type)
         else:
             self.reductions = Reduction.objects.filter(id=reduction_id)
-    
+
     def update_originals(self):
-        super(BaseStats,self).update_originals()
+        super(BaseStats, self).update_originals()
         self.update_variables_and_sources()
-        self.originals=get_originals(self.variables,self.originals)
+        self.originals = get_originals(self.variables, self.originals)
         return self.originals
 
-    def starting_month_hydrologic_year(self,df):
+    def starting_month_hydrologic_year(self, df):
         mean_by_month = df["data"].groupby(pd.Grouper(freq='M')).mean()
         years_minimum = df.groupby(pd.Grouper(freq='AS')).idxmin()
         return pd.value_counts([d.month for d in years_minimum["data"]]).idxmax()
-    
-    def hydrologic_years_dict(self,df,hydrologic_year_type="flood"):
+
+    def hydrologic_years_dict(self, df, hydrologic_year_type="flood"):
         n_month = self.starting_month_hydrologic_year(df)
         if hydrologic_year_type != 'flood':
             n_month += 6
-            if n_month >12:
-                n_month-=12
+            if n_month > 12:
+                n_month -= 12
         gp = df["data"].groupby(pd.Grouper(freq="AS-%s"%meses[n_month]))
         dic = dict(list(gp))
-        annual_dic={key:dic[key] for key in dic.keys()}
+        annual_dic = {key: dic[key] for key in dic.keys()}
         '''        for key in dic.keys():
             df_year=pd.DataFrame({'data':dic[key].values,'hyear':[key for i in dic[key].index]},index=dic[key].index)
             hydrologic_years.append(df_year)
@@ -108,80 +108,79 @@ class BaseStats(StationInfo):
         print(df)'''
         return annual_dic
     
-    def get_reduced_serie(self,original,discretization,reduction,limiar=None):
+    def get_reduced_serie(self, original, discretization, reduction, limiar=None):
         return ReducedSerie.objects.filter(
-                original_serie = original,discretization=discretization,reduction=reduction,limiar=limiar)
+                original_serie = original, discretization=discretization, reduction=reduction, limiar=limiar)
     
     @abstractmethod
     def reduce(self):
         pass
     
     def get_or_create_reduced_data(self,daily,original,discretization,reduction,limiar=None,median=None,start_year=0,end_year=9999):
-        reduced=self.get_reduced_serie(
-            original,discretization,reduction,limiar)
+        reduced = self.get_reduced_serie(
+            original, discretization, reduction, limiar)
         if reduced:
             temporal_data = TemporalSerie.objects.filter(
-                id=reduced[0].temporal_serie_id)
-            reduced=reduced[0]
+                id = reduced[0].temporal_serie_id)
+            reduced = reduced[0]
         else:
-            date,data=self.reduce(daily,discretization,reduction,limiar,median)
-            temporal_data,reduced=self.get_temporal_data(
-                original,discretization,reduction,data,date,limiar)
-        reduced.temporals=[t for t in temporal_data if start_year<=t.date.year<=end_year]
-        date=[t.date for t in reduced.temporals]
-        data=[t.data for t in reduced.temporals]
-        return reduced,date,data
-        
-    
-    def get_graphs_data(self,daily,original,discretization):
-        graph=generic_obj()
-        reduceds=[]
-        xys=[]
-        graph.parameters={}
+            date, data = self.reduce(daily, discretization, reduction, limiar, median)
+            temporal_data, reduced = self.get_temporal_data(
+                original, discretization, reduction, data, date, limiar)
+        reduced.temporals = [t for t in temporal_data if start_year <= t.date.year <= end_year]
+        date = [t.date for t in reduced.temporals]
+        data = [t.data for t in reduced.temporals]
+        return reduced, date, data
+
+    def get_graphs_data(self, daily, original, discretization):
+        graph = generic_obj()
+        reduceds = []
+        xys = []
+        graph.parameters = {}
         for reduction in self.reductions:
-            self.get_parameters(daily,reduction,graph.parameters)
-            reduced,x,y = self.get_or_create_reduced_data(daily,original,discretization,reduction)
+            self.get_parameters(daily, reduction, graph.parameters)
+            reduced, x, y = self.get_or_create_reduced_data(daily, original, discretization, reduction)
             reduceds.append(reduced)
-            xys.append([x,y])
-        names=[r.type for r in self.reductions]
+            xys.append([x, y])
+        names = [r.type for r in self.reductions]
         if self.plot_daily:
-            xys.append([list(daily.index.to_datetime()),[d[0] for d in daily.values]])
+            xys.append([list(daily.index.to_datetime()), [d[0] for d in daily.values]])
             names.append(_('daily_data'))
-        graph.variable=original.variable
-        graph.discretization=discretization
-        graph.reduceds=reduceds
+        graph.variable = original.variable
+        graph.discretization = discretization
+        graph.reduceds = reduceds
         graph.xys = xys
-        graph.names=names
-        return graph,names
+        graph.names = names
+        return graph, names
     
-    def create_graph(self,xys,variable,unit,discretization,names):
+    def create_graph(self, xys, variable, unit, discretization, names):
         '''
         This method is responsible to return the graph. To change the graph.
         '''
-        return plot_web(xys=xys,title=_("%(discretization)s %(variable)s")%
-                                                {'variable':str(variable),
+        return plot_web(xys=xys, title=_("%(discretization)s %(variable)s")%
+                                                {'variable': str(variable),
                                                  'discretization':str(discretization)
                                                  },
-                                            variable=variable,unit=unit,names=names)
-    
+                                            variable=variable, unit=unit, names=names)
+
     def get_or_create_reduced_series(self):
         self.update_originals()
         self.update_variables_and_sources()
-        self.reduceds=[]
-        graphs=[]
+        self.reduceds = []
+        graphs = []
         for original in self.originals:
             temporals = TemporalSerie.objects.filter(id=original.temporal_serie_id)
             daily = self.create_daily_data_pandas(temporals)
             anos_hidrologicos = self.hydrologic_years_dict(daily)
-            discretizations=self.discretizations[:]
+            discretizations = self.discretizations[:]
             for discretization in discretizations:
-                graph,names = self.get_graphs_data(daily,original,discretization)
-                graph.graph = self.create_graph(graph.xys,original.variable,original.unit,discretization,names)
+                graph, names = self.get_graphs_data(daily, original, discretization)
+                graph.graph = self.create_graph(graph.xys, original.variable, original.unit, discretization, names)
                 graphs.append(graph)
             if self.plot_permancence_curve:
                 xys = self.get_permancence_curve_data(daily)
                 graph=generic_obj()
-                graph.graph = plot_web(xys,_('Permanence Curve'),original.variable,original.unit,[_('data'),],'%')
+                graph.graph = plot_web(xys, _('Permanence Curve'),original.variable,original.unit,[_('data'),],'%')
                 graph.title=_('Permanence Curve')
                 graphs.append(graph)
         self.reduceds = graphs
