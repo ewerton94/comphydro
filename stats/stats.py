@@ -1,28 +1,34 @@
 # -*- coding: utf-8 -*-
 from six import add_metaclass
 import pandas as pd
-from numpy import nan,mean,argmax,argmin,where,split,std
+from numpy import nan, mean, argmax, argmin, where, split, std
 from datetime import datetime
 from abc import ABCMeta, abstractmethod
 from django.utils.translation import gettext as _
-from data.models import Discretization,Unit,Variable,ConsistencyLevel,OriginalSerie,TemporalSerie,Stats
-from data.graphs import plot_web,plot_polar
-from stations.reads_data import get_id_temporal,criar_temporal
+from data.models import *
+from data.graphs import plot_web, plot_polar
+from stations.reads_data import get_id_temporal, criar_temporal
 from stations.models import Station
-from stations.utils import StationInfo,get_daily_from_temporal
-from .models import Reduction,ReducedSerie,RollingMeanSerie
-        
-funcoes_reducao = {'máxima':max,'mínima':min,'soma':sum, 'média':mean,'máxima média móvel':argmax,
-                   'mínima média móvel':argmin,'fall rate':'>','rise rate':'<','fall count':'>','rise count':'<',
-                    'low count':'<','high count':'>','low duration':'<','high duration':'>'}
-meses = {1:"JAN",2:"FEB",3:"MAR",4:"APR",5:"MAY",6:"JUN",7:"JUL",8:"AUG",9:"SEP",10:"OCT",11:"NOV",12:"DEC"}
+from stations.utils import StationInfo, get_daily_from_temporal
+from .models import Reduction, ReducedSerie, RollingMeanSerie
 
-reduction_abreviations = {'maximum':'max','minimum':'min'}
+funcoes_reducao = {
+    'máxima': max, 'mínima': min, 'soma': sum, 'média': mean, 'máxima média móvel': argmax,
+    'mínima média móvel': argmin, 'fall rate': '>', 'rise rate': '<',
+    'fall count': '>', 'rise count': '<', 'low count': '<',
+    'high count': '>', 'low duration': '<', 'high duration': '>'
+    }
+meses = {
+    1: "JAN", 2: "FEB", 3: "MAR", 4: "APR", 5: "MAY", 6: "JUN",
+    7: "JUL", 8: "AUG", 9: "SEP", 10: "OCT", 11: "NOV", 12: "DEC"
+    }
 
-def get_originals(variables,originals):
-    os=[]
+reduction_abreviations = {'maximum':'max', 'minimum':'min'}
+
+def get_originals(variables, originals):
+    os = []
     for variable in variables:
-        originals_by_variable=[o for o in originals if o.variable==variable]
+        originals_by_variable = [o for o in originals if o.variable==variable]
         cl_data_type = 'consisted' if 'consisted' in [o.consistency_level.type_en_us for o in originals_by_variable] else 'raw'
         os.append([o for o in originals_by_variable if o.consistency_level.type_en_us == cl_data_type][0])
     return os
@@ -32,8 +38,6 @@ def get_daily_data(station,variable,start_year=None,end_year=None):
     originals=get_originals([variable,],originals)
     temporals = TemporalSerie.objects.filter(id=originals[0].temporal_serie_id)
     return get_daily_from_temporal(temporals,start_year,end_year)
-
-
 
 class Table:
     def __init__(self,title,pre_data,pos_data):
