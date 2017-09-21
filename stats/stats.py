@@ -33,7 +33,7 @@ def get_originals(variables, originals):
         os.append([o for o in originals_by_variable if o.consistency_level.type_en_us == cl_data_type][0])
     return os
 
-def get_daily_data(station,variable,start_year=None,end_year=None):
+def get_daily_data(station, variable, start_year = None, end_year = None):
     originals = OriginalSerie.objects.filter(station=station)
     originals=get_originals([variable,],originals)
     temporals = TemporalSerie.objects.filter(id=originals[0].temporal_serie_id)
