@@ -23,9 +23,9 @@ from django.views import View
 
 class StationInformation(View):
     '''This class '''
-    
+
     context = {"BASE_URL":""}
-    
+
     def get_filters(self,filters):
         return furl("?"+filters).args
     def get_info_and_variables(self,station_id,filters):
@@ -36,17 +36,17 @@ class StationInformation(View):
         self.context['originals']=info.originals
         self.context['station']=info.originals[0].station
         self.context['variables']=variables
-        
-        
+
+
     def get(self, request, *args, **kwargs):
         filters = self.get_filters(kwargs['filters'])
         self.get_info_and_variables(kwargs['station_id'],filters)
-        self.context['stats'] = get_stats_list(request,self.context['variables'])  
+        self.context['stats'] = get_stats_list(request,self.context['variables'])
         self.context['all_stats'] = all_stats = get_all_stats_form_list()
         return render(request,'station_information.html',self.context)
-    
-    
-    
+
+
+
     def post(self, request, *args, **kwargs):
         filters = self.get_filters(kwargs['filters'])
         self.get_info_and_variables(kwargs['station_id'],filters)
@@ -62,21 +62,12 @@ class StationInformation(View):
                        }
             keys = {key:value for key,value in keys.items() if not value is None}
             url.args = keys
-            
-                                            
+
+
             return HttpResponseRedirect("/%s/stats/%s/%s/%s"%(get_language(),valid_stats[0].short_name,kwargs['station_id'],url.url.replace("?","")))
         return self.get(request, *args, **kwargs)
-    
-    
 
 
-
-
-
-
-
-        
-@login_required
 def create_station(request):
     if request.method == 'POST':
         form =CreateStationForm(request.POST)
@@ -90,7 +81,7 @@ def create_station(request):
             postos = Station.objects.filter(code=code)
             if postos:
                 messages.add_message(request, messages.ERROR, _('The station of code: %s already exists into the database.')%postos[0].code)
-                return render(request,'create_station.html',{'aba':'map','form':form})  
+                return render(request,'create_station.html',{'aba':'map','form':form})
             print('Solicitando Hidroweb')
             hid = eval(source.source)()
             print(source.source)
@@ -105,9 +96,9 @@ def create_station(request):
                 variavel = Variable.objects.get(ana_code=codigo_variavel)
                 executa = hid.executar(station,variavel)
                 if executa:
-                    messages.add_message(request, messages.ERROR, '%s'%executa) 
+                    messages.add_message(request, messages.ERROR, '%s'%executa)
             messages.add_message(request, messages.SUCCESS, 'Concluído!')
-            return render(request,'create_station.html',{'aba':'map'})    
+            return render(request,'create_station.html',{'aba':'map'})
     form =CreateStationForm
     return render(request,'create_station.html',{'aba':'map','form':form})
 
@@ -123,7 +114,5 @@ def stations(request):
             lon.append(station.localization.coordinates.x)
 
         context['graph'] = plot_map(lat,lon,text)
-    
+
     return render(request,'stations.html',context)
-
-
