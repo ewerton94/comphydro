@@ -88,7 +88,7 @@ DATABASES = {
         'ENGINE' : 'django.db.backends.postgresql_psycopg2',
         'NAME': 'comphydro',
         'USER': 'postgres',
-        'PASSWORD': 'eao41335',
+        'PASSWORD': 'comphydro',
         'PORT': '',
         'HOST': 'localhost',
     }

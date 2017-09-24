@@ -1,0 +1,5 @@
+django
+modeltranslation
+pandas
+bs4
+psycopg2
