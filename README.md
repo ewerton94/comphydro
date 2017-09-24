@@ -9,6 +9,13 @@ Este é um aplicativo criado para facilitar estudos em hidrologia, criado pelo g
 ```powershell
 
 django
+django-modeltranslation
+pandas
+bs4
+psycopg2
+furl
+plotly
+xlrd
 
 
 ```
@@ -45,8 +52,3 @@ from data_manager import *
 ```powershell
 python manage.py runserver
 ```
-
-
-
-
-
