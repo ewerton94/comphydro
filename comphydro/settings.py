@@ -89,6 +89,8 @@ DATABASES = {
         'NAME': 'comphydro',
         'USER': 'postgres',
         'PASSWORD': 'eao41335',
+        'PORT': '',
+        'HOST': 'localhost',
     }
 }
 
