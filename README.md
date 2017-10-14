@@ -23,8 +23,13 @@ xlrd
 * Procedimentos de instalação:
 
 1. Instale e configure o postgresql;
-2. Instale os pré-requisitos necessários;
-3. Obtenha este diretório em seu computador;
+2. Obtenha este diretório em seu computador;
+3. Instale os pré-requisitos necessários;
+* Você pode instalar executando o arquivo install_requeriments.bat no windows ou executando no terminal do linux o seguinte comando:
+
+```terminal
+python -m pip install -r requirements.txt
+```
 4. No arquivo comphydro/urls.py, comente as linhas 29 à 31:
 ```python
 urlpatterns += i18n_patterns(
@@ -34,7 +39,7 @@ urlpatterns += i18n_patterns(
     #url(r'^stats/', include('stats.urls')),
 )
 ```
-5. Abra a linha de comando ou terminal na pasta do projeto no seu computador e execute o comando migrate:
+5. Abra a linha de comando ou terminal na pasta do projeto no seu computador e execute o comando migrate (obs.: lembre-se de instalar o postgresql e criar um banco de dados com o nome comphydro):
 ```powershell
 python manage.py migrate
 
