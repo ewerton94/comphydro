@@ -6,3 +6,4 @@ psycopg2
 furl
 plotly
 xlrd
+xlwt
