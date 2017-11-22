@@ -175,8 +175,9 @@ class BaseStats(StationInfo):
             discretizations = self.discretizations[:]
             for discretization in discretizations:
                 graph, names = self.get_graphs_data(daily, original, discretization)
-                graph.graph = self.create_graph(graph.xys, original.variable, original.unit, discretization, names)
-                graphs.append(graph)
+                if graph.xys:
+                    graph.graph = self.create_graph(graph.xys, original.variable, original.unit, discretization, names)
+                    graphs.append(graph)
             if self.plot_permancence_curve:
                 xys = self.get_permancence_curve_data(daily)
                 graph=generic_obj()
