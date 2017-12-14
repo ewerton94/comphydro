@@ -10,7 +10,7 @@ from data.graphs import plot_web, plot_polar
 from stations.reads_data import get_id_temporal, criar_temporal
 from stations.models import Station
 from stations.utils import StationInfo, get_daily_from_temporal
-from .models import Reduction, ReducedSerie, RollingMeanSerie
+from .models import Reduction, ReducedSerie
 
 funcoes_reducao = {
     'máxima': max, 'mínima': min, 'soma': sum, 'média': mean, 'máxima média móvel': argmax,

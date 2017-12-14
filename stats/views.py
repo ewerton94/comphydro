@@ -3,6 +3,8 @@ from furl import furl
 
 from django.http import HttpResponse,HttpResponseRedirect
 from django.shortcuts import render
+from django.utils.safestring import mark_safe
+from django.utils.translation import gettext_lazy as _
 
 from data.graphs import plot_web
 from stations.utils import StationInfo,get_stats_list,get_all_stats_form_list,get_annual_stats_form_list,get_standard_stats_form_list,get_specific_stats_form_list
@@ -10,10 +12,13 @@ from stations.models import Station, Source, StationType, Localization,Coordinat
 from data.models import Variable
 from datetime import datetime
 
-from .models import Reduction,ReducedSerie,RollingMeanSerie
+from .models import Reduction,ReducedSerie,ResamplingSerie
 from .stats import BasicStats,RollingMean,RateOfChange,FrequencyOfChange,IHA,JulianDate,PulseCount,PulseDuration,ReferenceFlow,cv
 import pandas as pd
+from .forms import SerieFromParametersForm
 from django.views import View
+from .resampling import Resampling
+from data.graphs import plot_web, plot_polar
 
 
 def export_xls(reduceds,stats_name):
@@ -95,12 +100,77 @@ def stats_view(request,stats_name,**kwargs):
         return stats.get_data(kwargs['station_id'],stats_name.replace("_"," "),kwargs['filters'])
     else:
         return HttpResponse("Stats not found")
-    
-  
+
+def stats_study_view(request,**kwargs):
+    return render(request,'stats_study_information.html',{'resamplings':ResamplingSerie.objects.all()})
+
+from django.views import View
+
+class SerieFromParameters(View):
+    '''This class '''
+
+    context = {"BASE_URL":""}
+
+    def get(self, request, *args, **kwargs):
+        self.context['form']=SerieFromParametersForm
+        return render(request,'stats_information.html',self.context)
+
+
+
+    def post(self, request, *args, **kwargs):
+        form = SerieFromParametersForm(request.POST)
+        if form.is_valid():
+            data=form.cleaned_data
+            data['probability_or_aleatory']
+            abreviation_distribution = data['distribution']
+            sample_size = data['sample_size']
+            probability_values = data['probability_values']
+            if probability_values:
+                probability_values = list(map(float,probability_values.split(',')))
+            else:
+                probability_values = []
+            alpha = data['alpha']
+            betha = data['betha']
+            kappa = data['kappa']
+            resampling = Resampling()
+            parameters = {'alpha':alpha, 'betha':betha, 'kappa':kappa}
+            serie = resampling.resampling_from_parameters(parameters, distribution_abreviation=abreviation_distribution, n=sample_size, probabilities=probability_values)
+            return HttpResponseRedirect("/stats/study/")        
+        return self.get(request, *args, **kwargs)
         
+class SerieResamplingDetail(View):
+    '''This class '''
 
+    context = {"BASE_URL":""}
 
+    def get(self, request,resampling_serie_id, *args, **kwargs):
+        resampling_serie = ResamplingSerie.objects.get(id=resampling_serie_id)
+        if not resampling_serie.probabilities:
+            pass
+        self.context['resampling_serie'] = resampling_serie
+        self.context["graph"] = plot_web([[resampling_serie.data,resampling_serie.probabilities],], 'Permanence Curve',"percent","%",['quantile',],'m3/s',mode='markers')
+        return render(request,'resampling_information.html',self.context)
 
+    def post(self, request, *args, **kwargs):
+        form = SerieFromParametersForm(request.POST)
+        if form.is_valid():
+            data=form.cleaned_data
+            data['probability_or_aleatory']
+            abreviation_distribution = data['distribution']
+            sample_size = data['sample_size']
+            probability_values = data['probability_values']
+            if probability_values:
+                probability_values = list(map(float,probability_values.split(',')))
+            else:
+                probability_values = []
+            alpha = data['alpha']
+            betha = data['betha']
+            kappa = data['kappa']
+            resampling = Resampling()
+            parameters = {'alpha':alpha, 'betha':betha, 'kappa':kappa}
+            serie = resampling.resampling_from_parameters(parameters, distribution_abreviation=abreviation_distribution, n=sample_size, probabilities=probability_values)
+            return HttpResponseRedirect("/stats/study/")        
+        return self.get(request, *args, **kwargs)
 
 def iha(request,**kwargs):
     filters = furl("?"+kwargs['filters']).args
