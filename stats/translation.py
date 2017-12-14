@@ -1,5 +1,5 @@
 from modeltranslation.translator import translator, TranslationOptions
-from .models import Reduction,ReducedSerie,RollingMeanSerie
+from .models import Reduction, ReducedSerie, Distribution, ProbabilityCurve, ResamplingSerie
 
 class ReductionTranslationOptions(TranslationOptions):
     fields = ('type',)

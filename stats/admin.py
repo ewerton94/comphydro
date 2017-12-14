@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Reduction,ReducedSerie,RollingMeanSerie
+from .models import Reduction, ReducedSerie, Distribution, ProbabilityCurve, ResamplingSerie
 
 class ReductionAdmin(admin.ModelAdmin):
     model = Reduction
@@ -14,3 +14,6 @@ class ReducedSerieAdmin(admin.ModelAdmin):
     
 admin.site.register(Reduction,ReductionAdmin)
 admin.site.register(ReducedSerie)
+admin.site.register(Distribution)
+admin.site.register(ProbabilityCurve)
+admin.site.register(ResamplingSerie)
