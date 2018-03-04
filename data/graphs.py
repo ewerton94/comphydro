@@ -9,7 +9,7 @@ from django.utils.translation import gettext as _
 no_margin=Margin(l=0,r=0,b=0,t=0,pad=0)
 no_margin_with_padding=Margin(l=60,r=0,b=0,t=30,pad=0)
 
-def plot_web(xys,title,variable,unit,names=[],xaxis_title=_('time'),mode="lines+markers"):
+def plot_web(xys,title,variable,unit,names=[],xaxis_title=_('time'),mode="lines"):
     data=[Scatter(x=xy[0], y=xy[1], mode=mode) for xy in xys]
     if names:
         for i in range(len(data)):
