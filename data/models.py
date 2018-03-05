@@ -29,7 +29,7 @@ class Stats(models.Model):
 class Discretization(models.Model):
     type = models.CharField(max_length=30,verbose_name = _('type'))
     pandas_code = models.CharField(max_length=20,verbose_name = _('pandas code'))
-    stats_type = models.ForeignKey(Stats,verbose_name = _('stats type'))
+    stats_type = models.ForeignKey(Stats, models.CASCADE, verbose_name = _('stats type'))
     class Meta:
         verbose_name_plural = _("Discretizations")
         verbose_name = _("Discretization")
@@ -68,12 +68,12 @@ class ConsistencyLevel(models.Model):
 '''#################### **************** ORIGINAL SERIE *************** #####################'''
 
 class OriginalSerie(models.Model):
-    station = models.ForeignKey(Station,verbose_name = _('station'))
-    date_file_source = models.DateTimeField(auto_now_add=True,verbose_name = _('date and time'),unique=False)
-    variable = models.ForeignKey(Variable,verbose_name = _('variable'))
-    consistency_level = models.ForeignKey(ConsistencyLevel,verbose_name = _('level of consistency'))
-    discretization = models.ForeignKey(Discretization,verbose_name = _('discretization'))
-    unit = models.ForeignKey(Unit)
+    station = models.ForeignKey(Station, models.CASCADE, verbose_name=_('station'))
+    date_file_source = models.DateTimeField(auto_now_add=True,verbose_name=_('date and time'),unique=False)
+    variable = models.ForeignKey(Variable, models.CASCADE, verbose_name=_('variable'))
+    consistency_level = models.ForeignKey(ConsistencyLevel, models.CASCADE, verbose_name=_('level of consistency'))
+    discretization = models.ForeignKey(Discretization, models.CASCADE, verbose_name=_('discretization'))
+    unit = models.ForeignKey(Unit, models.CASCADE)
     temporal_serie_id = models.IntegerField()
     def __str__(self):
         return _('Original Serie from %s data from %s station, with %s (%s) data') % (self.discretization.type,

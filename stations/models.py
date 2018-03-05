@@ -13,13 +13,13 @@ class Localization(models.Model):
     class Meta:
         verbose_name_plural = _("Localizations")
         verbose_name = _("Localization")
-    coordinates = models.ForeignKey(Coordinate,verbose_name=_('coordinates'))
+    coordinates = models.ForeignKey(Coordinate, models.CASCADE, verbose_name=_('coordinates'))
     """
     coordenadas = models.PointField(srid=4326)
     objects = models.GeoManager()
     """
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s %s' % (self.coordinates.x, self.coordinates.y)
 
     
@@ -47,11 +47,11 @@ class Station(models.Model):
     class Meta:
         verbose_name_plural = _("Stations")
         verbose_name = _("Station")
-    station_type = models.ForeignKey(StationType,verbose_name=_('station type'))
-    source = models.ForeignKey(Source,verbose_name=_('source'))
+    station_type = models.ForeignKey(StationType, models.CASCADE, verbose_name=_('station type'))
+    source = models.ForeignKey(Source, models.CASCADE, verbose_name=_('source'))
     code = models.CharField(max_length=15,null=True,verbose_name=_('code'))
     name = models.CharField(max_length=100,verbose_name=_('name'))
-    localization = models.ForeignKey(Localization,verbose_name=_('localization'))
+    localization = models.ForeignKey(Localization, models.CASCADE, verbose_name=_('localization'))
     def __str__(self):
         return '%s %s (%s)'%(self.name,self.source.source,self.code)
     

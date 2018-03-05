@@ -6,7 +6,7 @@ from django.contrib.postgres.fields import ArrayField
 
 class Reduction(models.Model):
     type = models.CharField(max_length=20,verbose_name = _('type'))
-    stats_type = models.ForeignKey(Stats,verbose_name = _('stats type'))
+    stats_type = models.ForeignKey(Stats, models.CASCADE, verbose_name = _('stats type'))
     hydrologic_year_type = models.CharField(max_length=50,choices=(('flood','flood'),('drought','drought')),verbose_name = _('hydrologic year type'))
     class Meta:
         verbose_name_plural = _("Reductions")
@@ -15,9 +15,9 @@ class Reduction(models.Model):
         return '%s'%self.type
      
 class ReducedSerie(models.Model):
-    original_serie = models.ForeignKey(OriginalSerie,verbose_name = _('original serie'))
-    discretization = models.ForeignKey(Discretization,verbose_name = _('discretization'))
-    reduction = models.ForeignKey(Reduction,verbose_name = _('reduction'))
+    original_serie = models.ForeignKey(OriginalSerie, models.CASCADE, verbose_name = _('original serie'))
+    discretization = models.ForeignKey(Discretization, models.CASCADE, verbose_name = _('discretization'))
+    reduction = models.ForeignKey(Reduction, models.CASCADE, verbose_name = _('reduction'))
     temporal_serie_id = models.IntegerField(verbose_name = _('temporal serie id'))
     limiar=models.FloatField(null=True,verbose_name = _('limiar'))
     class Meta:
@@ -36,7 +36,7 @@ class Distribution(models.Model):
 
 class ProbabilityCurve(models.Model):
     """This class manages probability curves"""
-    distribution = models.ForeignKey(Distribution, verbose_name=_('distribution'))
+    distribution = models.ForeignKey(Distribution, models.CASCADE, verbose_name=_('distribution'))
     alpha = models.FloatField(verbose_name=_('alpha'))
     betha = models.FloatField(verbose_name=_('betha'))
     kappa = models.FloatField(verbose_name=_('kappa'))
@@ -48,7 +48,7 @@ class ProbabilityCurve(models.Model):
 class ResamplingSerie(models.Model):
     """This class manages resampling series"""
     length = models.IntegerField(verbose_name=_('length'))
-    curve = models.ForeignKey(ProbabilityCurve, verbose_name=_('curve'))
+    curve = models.ForeignKey(ProbabilityCurve, models.CASCADE, verbose_name=_('curve'))
     data = ArrayField(models.FloatField(), verbose_name=_('data'))
     probabilities = ArrayField(models.FloatField(), verbose_name=_('probabilities'),blank=True)
     is_base_curve = models.BooleanField(verbose_name=_('Is base curve'))
